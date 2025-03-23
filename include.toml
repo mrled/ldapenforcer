@@ -1,0 +1,2 @@
+[ldapenforcer]
+managed_ou = "include-managed"

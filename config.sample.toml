@@ -1,0 +1,32 @@
+[ldapenforcer]
+# LDAP Connection Settings
+# URI for connecting to LDAP server (required)
+uri = "ldap://example.com:389"
+
+# DN for binding to LDAP (required)
+bind_dn = "cn=admin,dc=example,dc=com"
+
+# Password for binding to LDAP (either password or password_file must be provided)
+password = "admin_password"
+# OR
+# password_file = "/path/to/password/file.txt"
+
+# Directory Structure
+# Base DN for users (required)
+user_base_dn = "ou=users,dc=example,dc=com"
+
+# Base DN for services (required)
+service_base_dn = "ou=services,dc=example,dc=com"
+
+# Base DN for groups (required)
+group_base_dn = "ou=groups,dc=example,dc=com"
+
+# Name of the OU indicating managed objects (required)
+managed_ou = "managed"
+
+# Include files - paths are relative to this config file's directory
+# unless they are absolute paths
+includes = [
+  # "additional-config.toml",
+  # "/absolute/path/to/config.toml"
+]
