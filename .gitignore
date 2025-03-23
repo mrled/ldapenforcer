@@ -1,0 +1,12 @@
+# Binaries for programs and plugins
+ldapenforcer
+
+# Test binary, built with `go test -c`
+*.test
+
+# Go workspace file
+go.work
+
+# macOS specific files
+.DS_Store
+._*
