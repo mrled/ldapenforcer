@@ -144,7 +144,7 @@ func (c *Config) merge(other *Config) {
 	if other.LDAPEnforcer.ManagedOU != "" {
 		c.LDAPEnforcer.ManagedOU = other.LDAPEnforcer.ManagedOU
 	}
-	
+
 	// Merge people
 	if other.LDAPEnforcer.Person != nil {
 		if c.LDAPEnforcer.Person == nil {
@@ -154,7 +154,7 @@ func (c *Config) merge(other *Config) {
 			c.LDAPEnforcer.Person[uid] = person
 		}
 	}
-	
+
 	// Merge service accounts
 	if other.LDAPEnforcer.SvcAcct != nil {
 		if c.LDAPEnforcer.SvcAcct == nil {
@@ -164,7 +164,7 @@ func (c *Config) merge(other *Config) {
 			c.LDAPEnforcer.SvcAcct[uid] = svcacct
 		}
 	}
-	
+
 	// Merge groups
 	if other.LDAPEnforcer.Group != nil {
 		if c.LDAPEnforcer.Group == nil {
@@ -205,7 +205,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("password-file", "", "File containing the password for binding to LDAP")
 	flags.String("people-base-dn", "", "Base DN for people")
 	flags.String("svcacct-base-dn", "", "Base DN for service accounts")
-	flags.String("group-base-dn", "", "Base DN for groups") 
+	flags.String("group-base-dn", "", "Base DN for groups")
 	flags.String("managed-ou", "", "Name of the OU indicating managed objects")
 }
 
@@ -245,12 +245,12 @@ func (c *Config) Validate() error {
 	if c.LDAPEnforcer.BindDN == "" {
 		return fmt.Errorf("bind DN is required")
 	}
-	
+
 	// Check if either password or password file is provided
 	if c.LDAPEnforcer.Password == "" && c.LDAPEnforcer.PasswordFile == "" {
 		return fmt.Errorf("either password or password file must be provided")
 	}
-	
+
 	if c.LDAPEnforcer.PeopleBaseDN == "" {
 		return fmt.Errorf("people base DN is required")
 	}
@@ -263,6 +263,6 @@ func (c *Config) Validate() error {
 	if c.LDAPEnforcer.ManagedOU == "" {
 		return fmt.Errorf("managed OU is required")
 	}
-	
+
 	return nil
 }

@@ -8,17 +8,17 @@ func TestGetGroupMembers(t *testing.T) {
 	// Create test people
 	people := map[string]*Person{
 		"user1": {
-			CN:   "User One",
-			Mail: "user1@example.com",
+			CN:    "User One",
+			Mail:  "user1@example.com",
 			Posix: []int{1001, 1001},
 		},
 		"user2": {
-			CN:   "User Two",
-			Mail: "user2@example.com",
+			CN:    "User Two",
+			Mail:  "user2@example.com",
 			Posix: []int{1002, 1002},
 		},
 	}
-	
+
 	// Create test service accounts
 	svcaccts := map[string]*SvcAcct{
 		"svc1": {
@@ -31,7 +31,7 @@ func TestGetGroupMembers(t *testing.T) {
 			Posix:       []int{2002},
 		},
 	}
-	
+
 	// Create test groups
 	groups := map[string]*Group{
 		"group1": {
@@ -70,13 +70,13 @@ func TestGetGroupMembers(t *testing.T) {
 			Groups:         []string{"cyclicgroup1"},
 		},
 	}
-	
+
 	// Directory structure
 	peopleBaseDN := "ou=people,dc=example,dc=com"
 	svcacctBaseDN := "ou=svcaccts,dc=example,dc=com"
 	groupBaseDN := "ou=groups,dc=example,dc=com"
 	managedOU := "enforced"
-	
+
 	// Test getting members of group1
 	group1Members, err := GetGroupMembers("group1", groups, people, svcaccts, peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU)
 	if err != nil {
@@ -94,7 +94,7 @@ func TestGetGroupMembers(t *testing.T) {
 	if len(nestedMembers) != 4 {
 		t.Errorf("Expected 4 members in nested group, got %d", len(nestedMembers))
 	}
-	
+
 	// Test cyclic group references (should not cause infinite recursion)
 	cyclicMembers, err := GetGroupMembers("cyclicgroup1", groups, people, svcaccts, peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU)
 	if err != nil {

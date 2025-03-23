@@ -11,7 +11,7 @@ import (
 func TestSyncWorkflow(t *testing.T) {
 	// Skip this test in normal runs since it's more of an integration test
 	t.Skip("Skipping sync workflow test - use -test.run=TestSyncWorkflow to run explicitly")
-	
+
 	// Create a test configuration
 	testConfig := &config.Config{
 		LDAPEnforcer: config.LDAPEnforcerConfig{
@@ -65,7 +65,7 @@ func TestSyncWorkflow(t *testing.T) {
 	}
 
 	// For this test, we'll validate the workflow steps without actually connecting to LDAP
-	
+
 	// 1. Validate people attributes
 	johnAttrs := GetPersonAttributes(testConfig.LDAPEnforcer.Person["john"])
 	if johnAttrs["cn"] == nil || johnAttrs["cn"][0] != "John Doe" {
@@ -74,55 +74,55 @@ func TestSyncWorkflow(t *testing.T) {
 	if johnAttrs["mail"] == nil || johnAttrs["mail"][0] != "john@example.com" {
 		t.Errorf("Expected mail attribute to be 'john@example.com', got %v", johnAttrs["mail"])
 	}
-	
+
 	// 2. Validate service account attributes
 	backupAttrs := GetSvcAcctAttributes(testConfig.LDAPEnforcer.SvcAcct["backup"])
 	if backupAttrs["description"] == nil || backupAttrs["description"][0] != "Backup service for system files" {
 		t.Errorf("Expected description attribute to be 'Backup service for system files', got %v", backupAttrs["description"])
 	}
-	
+
 	// 3. Create a client (without connecting) for DN generation
 	client := &Client{
 		config: testConfig,
 	}
-	
+
 	// 4. Validate DN generation
 	johnDN := client.PersonToDN("john")
 	expectedJohnDN := "uid=john,ou=managed,ou=people,dc=example,dc=com"
 	if johnDN != expectedJohnDN {
 		t.Errorf("Expected DN %s, got %s", expectedJohnDN, johnDN)
 	}
-	
+
 	// 5. Validate group attribute generation
 	adminsAttrs, err := client.GetGroupAttributes("admins", testConfig.LDAPEnforcer.Group["admins"])
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	
+
 	if len(adminsAttrs["member"]) != 2 {
 		t.Errorf("Expected admins group to have 2 members, got %d", len(adminsAttrs["member"]))
 	}
-	
+
 	// 6. Validate nested group membership
 	allAttrs, err := client.GetGroupAttributes("all", testConfig.LDAPEnforcer.Group["all"])
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	
+
 	if len(allAttrs["member"]) != 3 {
 		t.Errorf("Expected 'all' group to have 3 members (john, jane, backup), got %d", len(allAttrs["member"]))
 	}
-	
+
 	// 7. Validate OUs that would be created
 	peopleOU := "ou=managed,ou=people,dc=example,dc=com"
 	svcacctOU := "ou=managed,ou=svcaccts,dc=example,dc=com"
 	groupOU := "ou=managed,ou=groups,dc=example,dc=com"
-	
+
 	// These would be created during a real sync
 	t.Logf("Would create/ensure OU: %s", peopleOU)
 	t.Logf("Would create/ensure OU: %s", svcacctOU)
 	t.Logf("Would create/ensure OU: %s", groupOU)
-	
+
 	// 8. Simulate person sync
 	for uid, person := range testConfig.LDAPEnforcer.Person {
 		dn := client.PersonToDN(uid)
@@ -130,7 +130,7 @@ func TestSyncWorkflow(t *testing.T) {
 		attrs["uid"] = []string{uid} // Add UID attribute for creation
 		t.Logf("Would create/update person: %s", dn)
 	}
-	
+
 	// 9. Simulate service account sync
 	for uid, svcacct := range testConfig.LDAPEnforcer.SvcAcct {
 		dn := client.SvcAcctToDN(uid)
@@ -138,7 +138,7 @@ func TestSyncWorkflow(t *testing.T) {
 		attrs["uid"] = []string{uid} // Add UID attribute for creation
 		t.Logf("Would create/update service account: %s", dn)
 	}
-	
+
 	// 10. Simulate group sync
 	for groupname, group := range testConfig.LDAPEnforcer.Group {
 		dn := client.GroupToDN(groupname)

@@ -45,7 +45,7 @@ func (p *Person) GetSN() string {
 	if p.SN != "" {
 		return p.SN
 	}
-	
+
 	// If SN is not set, use the last word in CN
 	words := splitWords(p.CN)
 	if len(words) > 0 {

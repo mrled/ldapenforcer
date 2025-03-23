@@ -11,7 +11,7 @@ import (
 
 // PersonToDN converts a person UID to a DN
 func (c *Client) PersonToDN(uid string) string {
-	return fmt.Sprintf("uid=%s,ou=%s,%s", 
+	return fmt.Sprintf("uid=%s,ou=%s,%s",
 		ldap.EscapeFilter(uid),
 		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
 		c.config.LDAPEnforcer.PeopleBaseDN)
@@ -19,7 +19,7 @@ func (c *Client) PersonToDN(uid string) string {
 
 // SvcAcctToDN converts a service account UID to a DN
 func (c *Client) SvcAcctToDN(uid string) string {
-	return fmt.Sprintf("uid=%s,ou=%s,%s", 
+	return fmt.Sprintf("uid=%s,ou=%s,%s",
 		ldap.EscapeFilter(uid),
 		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
 		c.config.LDAPEnforcer.SvcAcctBaseDN)
@@ -27,7 +27,7 @@ func (c *Client) SvcAcctToDN(uid string) string {
 
 // GroupToDN converts a group name to a DN
 func (c *Client) GroupToDN(groupname string) string {
-	return fmt.Sprintf("cn=%s,ou=%s,%s", 
+	return fmt.Sprintf("cn=%s,ou=%s,%s",
 		ldap.EscapeFilter(groupname),
 		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
 		c.config.LDAPEnforcer.GroupBaseDN)
@@ -40,7 +40,7 @@ func GetPersonAttributes(person *model.Person) map[string][]string {
 		"cn":          {person.CN},
 		"sn":          {person.GetSN()},
 	}
-	
+
 	// Add optional attributes if set
 	if person.GivenName != "" {
 		attrs["givenName"] = []string{person.GivenName}
@@ -68,7 +68,7 @@ func GetSvcAcctAttributes(svcacct *model.SvcAcct) map[string][]string {
 		"cn":          {svcacct.CN},
 		"description": {svcacct.Description},
 	}
-	
+
 	// Add optional attributes if set
 	if svcacct.Mail != "" {
 		attrs["mail"] = []string{svcacct.Mail}
@@ -134,7 +134,7 @@ func (c *Client) GetGroupAttributes(groupname string, group *model.Group) (map[s
 // EnsureManagedOUsExist ensures that all required OUs for managed objects exist
 func (c *Client) EnsureManagedOUsExist() error {
 	// Ensure people OU exists
-	peopleOU := fmt.Sprintf("ou=%s,%s", 
+	peopleOU := fmt.Sprintf("ou=%s,%s",
 		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
 		c.config.LDAPEnforcer.PeopleBaseDN)
 	err := c.EnsureOUExists(peopleOU)
@@ -143,7 +143,7 @@ func (c *Client) EnsureManagedOUsExist() error {
 	}
 
 	// Ensure service account OU exists
-	svcacctOU := fmt.Sprintf("ou=%s,%s", 
+	svcacctOU := fmt.Sprintf("ou=%s,%s",
 		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
 		c.config.LDAPEnforcer.SvcAcctBaseDN)
 	err = c.EnsureOUExists(svcacctOU)
@@ -152,7 +152,7 @@ func (c *Client) EnsureManagedOUsExist() error {
 	}
 
 	// Ensure group OU exists
-	groupOU := fmt.Sprintf("ou=%s,%s", 
+	groupOU := fmt.Sprintf("ou=%s,%s",
 		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
 		c.config.LDAPEnforcer.GroupBaseDN)
 	err = c.EnsureOUExists(groupOU)
@@ -172,7 +172,7 @@ func (c *Client) SyncPerson(uid string, person *model.Person) error {
 	}
 
 	attrs := GetPersonAttributes(person)
-	
+
 	if exists {
 		// Update existing person
 		log.Printf("Updating person: %s", dn)
@@ -195,7 +195,7 @@ func (c *Client) SyncSvcAcct(uid string, svcacct *model.SvcAcct) error {
 	}
 
 	attrs := GetSvcAcctAttributes(svcacct)
-	
+
 	if exists {
 		// Update existing service account
 		log.Printf("Updating service account: %s", dn)
@@ -221,7 +221,7 @@ func (c *Client) SyncGroup(groupname string, group *model.Group) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if exists {
 		// Update existing group
 		log.Printf("Updating group: %s", dn)

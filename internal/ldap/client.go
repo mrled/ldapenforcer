@@ -10,7 +10,7 @@ import (
 
 // Client represents an LDAP client
 type Client struct {
-	conn *ldap.Conn
+	conn   *ldap.Conn
 	config *config.Config
 }
 
@@ -37,7 +37,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	}
 
 	return &Client{
-		conn: conn,
+		conn:   conn,
 		config: cfg,
 	}, nil
 }

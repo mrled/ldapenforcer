@@ -3,8 +3,8 @@ package ldapenforcer
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/mrled/ldapenforcer/internal/version"
+	"github.com/spf13/cobra"
 )
 
 // versionCmd represents the version command

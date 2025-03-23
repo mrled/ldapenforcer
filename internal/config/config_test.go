@@ -3,7 +3,7 @@ package config
 import (
 	"path/filepath"
 	"testing"
-	
+
 	"github.com/spf13/pflag"
 )
 
@@ -39,7 +39,7 @@ func TestLoadConfig(t *testing.T) {
 	if config.LDAPEnforcer.GroupBaseDN != "ou=groups,dc=example,dc=com" {
 		t.Errorf("Expected GroupBaseDN 'ou=groups,dc=example,dc=com', got '%s'", config.LDAPEnforcer.GroupBaseDN)
 	}
-	
+
 	// Check that includes were processed
 	if config.LDAPEnforcer.ManagedOU != "managed-override" {
 		t.Errorf("Expected ManagedOU 'managed-override' from included file, got '%s'", config.LDAPEnforcer.ManagedOU)
@@ -91,7 +91,7 @@ func TestGetPassword(t *testing.T) {
 			config.LDAPEnforcer.PasswordFile = tt.passwordFile
 
 			result, err := config.GetPassword()
-			
+
 			if tt.expectError && err == nil {
 				t.Errorf("Expected an error but got none")
 			}
@@ -108,21 +108,21 @@ func TestGetPassword(t *testing.T) {
 func TestMergeWithFlags(t *testing.T) {
 	// Create a test config
 	config := &Config{}
-	
+
 	// Create test flags
 	flags := NewTestFlagSet()
 	AddFlags(flags)
-	
+
 	// Set some flag values
 	flags.Set("ldap-uri", "ldap://flagtest.com")
 	flags.Set("bind-dn", "cn=flaguser,dc=example,dc=com")
 	flags.Set("people-base-dn", "ou=people,dc=flagtest,dc=com")
 	flags.Set("svcacct-base-dn", "ou=svcaccts,dc=flagtest,dc=com")
 	flags.Set("managed-ou", "flag-managed")
-	
+
 	// Merge with config
 	config.MergeWithFlags(flags)
-	
+
 	// Check values
 	if config.LDAPEnforcer.URI != "ldap://flagtest.com" {
 		t.Errorf("Expected URI 'ldap://flagtest.com', got '%s'", config.LDAPEnforcer.URI)
@@ -210,7 +210,7 @@ func TestValidate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
-			
+
 			if tt.expectError && err == nil {
 				t.Errorf("Expected an error but got none")
 			}

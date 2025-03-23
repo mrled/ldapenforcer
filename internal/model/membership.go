@@ -18,7 +18,7 @@ type Member struct {
 // GetGroupMembers returns all members of a group, including members of nested groups
 func GetGroupMembers(groupname string, groups map[string]*Group, people map[string]*Person, svcaccts map[string]*SvcAcct,
 	peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU string) ([]*Member, error) {
-	
+
 	// Get the group
 	group, ok := groups[groupname]
 	if !ok {
@@ -27,17 +27,17 @@ func GetGroupMembers(groupname string, groups map[string]*Group, people map[stri
 
 	// Track processed groups to avoid cycles
 	processedGroups := make(map[string]bool)
-	
+
 	// Get all members
 	var members []*Member
-	
+
 	// Process direct people members
 	for _, uid := range group.People {
 		person, ok := people[uid]
 		if !ok {
 			continue
 		}
-		
+
 		members = append(members, &Member{
 			DN:      createPersonDN(uid, peopleBaseDN, managedOU),
 			Type:    "person",
@@ -45,14 +45,14 @@ func GetGroupMembers(groupname string, groups map[string]*Group, people map[stri
 			IsPosix: person.IsPosix(),
 		})
 	}
-	
+
 	// Process direct service account members
 	for _, uid := range group.SvcAccts {
 		svcacct, ok := svcaccts[uid]
 		if !ok {
 			continue
 		}
-		
+
 		members = append(members, &Member{
 			DN:      createSvcAcctDN(uid, svcacctBaseDN, managedOU),
 			Type:    "svcacct",
@@ -60,19 +60,19 @@ func GetGroupMembers(groupname string, groups map[string]*Group, people map[stri
 			IsPosix: svcacct.IsPosix(),
 		})
 	}
-	
+
 	// Process nested groups
 	processedGroups[groupname] = true
 	for _, nestedGroupName := range group.Groups {
 		if processedGroups[nestedGroupName] {
 			continue // Avoid cycles
 		}
-		
+
 		// Get members of nested group (recursive)
 		nestedMembers, err := getNestedGroupMembers(
-			nestedGroupName, 
-			groups, 
-			people, 
+			nestedGroupName,
+			groups,
+			people,
 			svcaccts,
 			peopleBaseDN,
 			svcacctBaseDN,
@@ -83,37 +83,37 @@ func GetGroupMembers(groupname string, groups map[string]*Group, people map[stri
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Add members from nested group
 		members = append(members, nestedMembers...)
 	}
-	
+
 	return members, nil
 }
 
 // getNestedGroupMembers is a recursive helper function for GetGroupMembers
 func getNestedGroupMembers(groupname string, groups map[string]*Group, people map[string]*Person, svcaccts map[string]*SvcAcct,
 	peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU string, processedGroups map[string]bool) ([]*Member, error) {
-	
+
 	// Get the group
 	group, ok := groups[groupname]
 	if !ok {
 		return nil, nil
 	}
-	
+
 	// Mark this group as processed
 	processedGroups[groupname] = true
-	
+
 	// Get all members
 	var members []*Member
-	
+
 	// Process direct people members
 	for _, uid := range group.People {
 		person, ok := people[uid]
 		if !ok {
 			continue
 		}
-		
+
 		members = append(members, &Member{
 			DN:      createPersonDN(uid, peopleBaseDN, managedOU),
 			Type:    "person",
@@ -121,14 +121,14 @@ func getNestedGroupMembers(groupname string, groups map[string]*Group, people ma
 			IsPosix: person.IsPosix(),
 		})
 	}
-	
+
 	// Process direct service account members
 	for _, uid := range group.SvcAccts {
 		svcacct, ok := svcaccts[uid]
 		if !ok {
 			continue
 		}
-		
+
 		members = append(members, &Member{
 			DN:      createSvcAcctDN(uid, svcacctBaseDN, managedOU),
 			Type:    "svcacct",
@@ -136,18 +136,18 @@ func getNestedGroupMembers(groupname string, groups map[string]*Group, people ma
 			IsPosix: svcacct.IsPosix(),
 		})
 	}
-	
+
 	// Process nested groups (recursively)
 	for _, nestedGroupName := range group.Groups {
 		if processedGroups[nestedGroupName] {
 			continue // Avoid cycles
 		}
-		
+
 		// Get members of nested group (recursive)
 		nestedMembers, err := getNestedGroupMembers(
-			nestedGroupName, 
-			groups, 
-			people, 
+			nestedGroupName,
+			groups,
+			people,
 			svcaccts,
 			peopleBaseDN,
 			svcacctBaseDN,
@@ -158,11 +158,11 @@ func getNestedGroupMembers(groupname string, groups map[string]*Group, people ma
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Add members from nested group
 		members = append(members, nestedMembers...)
 	}
-	
+
 	return members, nil
 }
 

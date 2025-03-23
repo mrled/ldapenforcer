@@ -25,16 +25,16 @@ enforcing policies on LDAP directories.`,
 		if cmd.Name() == "version" && cmd.Parent().Name() == "ldapenforcer" {
 			return nil
 		}
-		
+
 		var err error
-		
+
 		// If config file specified, load it
 		if cfgFile != "" {
 			cfg, err = config.LoadConfig(cfgFile)
 			if err != nil {
 				return fmt.Errorf("error loading config file: %w", err)
 			}
-			
+
 			// Merge command line flags with config
 			cfg.MergeWithFlags(cmd.Flags())
 		} else {
@@ -42,7 +42,7 @@ enforcing policies on LDAP directories.`,
 			cfg = &config.Config{}
 			cfg.MergeWithFlags(cmd.Flags())
 		}
-		
+
 		return nil
 	},
 }
@@ -59,7 +59,7 @@ func Execute() {
 func init() {
 	// Define flags for the root command
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file path")
-	
+
 	// Add all config flags
 	config.AddFlags(RootCmd.PersistentFlags())
 }
