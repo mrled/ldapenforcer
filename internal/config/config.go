@@ -33,11 +33,11 @@ type LDAPEnforcerConfig struct {
 	// File containing the password for binding to LDAP
 	PasswordFile string `toml:"password_file"`
 
-	// Base DN for users
-	UserBaseDN string `toml:"user_base_dn"`
+	// Base DN for people
+	PeopleBaseDN string `toml:"people_base_dn"`
 
-	// Base DN for services
-	ServiceBaseDN string `toml:"service_base_dn"`
+	// Base DN for service accounts
+	SvcAcctBaseDN string `toml:"svcacct_base_dn"`
 
 	// Base DN for groups
 	GroupBaseDN string `toml:"group_base_dn"`
@@ -122,11 +122,11 @@ func (c *Config) merge(other *Config) {
 	if other.LDAPEnforcer.PasswordFile != "" {
 		c.LDAPEnforcer.PasswordFile = other.LDAPEnforcer.PasswordFile
 	}
-	if other.LDAPEnforcer.UserBaseDN != "" {
-		c.LDAPEnforcer.UserBaseDN = other.LDAPEnforcer.UserBaseDN
+	if other.LDAPEnforcer.PeopleBaseDN != "" {
+		c.LDAPEnforcer.PeopleBaseDN = other.LDAPEnforcer.PeopleBaseDN
 	}
-	if other.LDAPEnforcer.ServiceBaseDN != "" {
-		c.LDAPEnforcer.ServiceBaseDN = other.LDAPEnforcer.ServiceBaseDN
+	if other.LDAPEnforcer.SvcAcctBaseDN != "" {
+		c.LDAPEnforcer.SvcAcctBaseDN = other.LDAPEnforcer.SvcAcctBaseDN
 	}
 	if other.LDAPEnforcer.GroupBaseDN != "" {
 		c.LDAPEnforcer.GroupBaseDN = other.LDAPEnforcer.GroupBaseDN
@@ -163,8 +163,8 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("bind-dn", "", "DN for binding to LDAP")
 	flags.String("password", "", "Password for binding to LDAP")
 	flags.String("password-file", "", "File containing the password for binding to LDAP")
-	flags.String("user-base-dn", "", "Base DN for users")
-	flags.String("service-base-dn", "", "Base DN for services")
+	flags.String("people-base-dn", "", "Base DN for people")
+	flags.String("svcacct-base-dn", "", "Base DN for service accounts")
 	flags.String("group-base-dn", "", "Base DN for groups") 
 	flags.String("managed-ou", "", "Name of the OU indicating managed objects")
 }
@@ -183,11 +183,11 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	if passwordFile, _ := flags.GetString("password-file"); passwordFile != "" {
 		c.LDAPEnforcer.PasswordFile = passwordFile
 	}
-	if userBaseDN, _ := flags.GetString("user-base-dn"); userBaseDN != "" {
-		c.LDAPEnforcer.UserBaseDN = userBaseDN
+	if peopleBaseDN, _ := flags.GetString("people-base-dn"); peopleBaseDN != "" {
+		c.LDAPEnforcer.PeopleBaseDN = peopleBaseDN
 	}
-	if serviceBaseDN, _ := flags.GetString("service-base-dn"); serviceBaseDN != "" {
-		c.LDAPEnforcer.ServiceBaseDN = serviceBaseDN
+	if svcAcctBaseDN, _ := flags.GetString("svcacct-base-dn"); svcAcctBaseDN != "" {
+		c.LDAPEnforcer.SvcAcctBaseDN = svcAcctBaseDN
 	}
 	if groupBaseDN, _ := flags.GetString("group-base-dn"); groupBaseDN != "" {
 		c.LDAPEnforcer.GroupBaseDN = groupBaseDN
@@ -211,11 +211,11 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("either password or password file must be provided")
 	}
 	
-	if c.LDAPEnforcer.UserBaseDN == "" {
-		return fmt.Errorf("user base DN is required")
+	if c.LDAPEnforcer.PeopleBaseDN == "" {
+		return fmt.Errorf("people base DN is required")
 	}
-	if c.LDAPEnforcer.ServiceBaseDN == "" {
-		return fmt.Errorf("service base DN is required")
+	if c.LDAPEnforcer.SvcAcctBaseDN == "" {
+		return fmt.Errorf("service account base DN is required")
 	}
 	if c.LDAPEnforcer.GroupBaseDN == "" {
 		return fmt.Errorf("group base DN is required")

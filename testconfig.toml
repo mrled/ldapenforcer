@@ -2,8 +2,8 @@
 uri = "ldap://testfile.example.com:389"
 bind_dn = "cn=testfile,dc=example,dc=com"
 password = "test_password"
-user_base_dn = "ou=testusers,dc=example,dc=com"
-service_base_dn = "ou=testservices,dc=example,dc=com"
+people_base_dn = "ou=people,dc=example,dc=com"
+svcacct_base_dn = "ou=svcaccts,dc=example,dc=com"
 group_base_dn = "ou=testgroups,dc=example,dc=com"
 managed_ou = "test-managed"
 includes = ["include.toml"]

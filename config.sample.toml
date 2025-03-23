@@ -12,11 +12,11 @@ password = "admin_password"
 # password_file = "/path/to/password/file.txt"
 
 # Directory Structure
-# Base DN for users (required)
-user_base_dn = "ou=users,dc=example,dc=com"
+# Base DN for people (required)
+people_base_dn = "ou=people,dc=example,dc=com"
 
-# Base DN for services (required)
-service_base_dn = "ou=services,dc=example,dc=com"
+# Base DN for service accounts (required)
+svcacct_base_dn = "ou=svcaccts,dc=example,dc=com"
 
 # Base DN for groups (required)
 group_base_dn = "ou=groups,dc=example,dc=com"

@@ -53,8 +53,8 @@ password = "admin_password"
 # password_file = "/path/to/password/file.txt"
 
 # Directory Structure
-user_base_dn = "ou=users,dc=example,dc=com"
-service_base_dn = "ou=services,dc=example,dc=com"
+people_base_dn = "ou=people,dc=example,dc=com"
+svcacct_base_dn = "ou=svcaccts,dc=example,dc=com"
 group_base_dn = "ou=groups,dc=example,dc=com"
 managed_ou = "managed"
 

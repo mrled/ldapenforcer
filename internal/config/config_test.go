@@ -30,11 +30,11 @@ func TestLoadConfig(t *testing.T) {
 	if config.LDAPEnforcer.Password != "admin_password" {
 		t.Errorf("Expected Password 'admin_password', got '%s'", config.LDAPEnforcer.Password)
 	}
-	if config.LDAPEnforcer.UserBaseDN != "ou=users,dc=example,dc=com" {
-		t.Errorf("Expected UserBaseDN 'ou=users,dc=example,dc=com', got '%s'", config.LDAPEnforcer.UserBaseDN)
+	if config.LDAPEnforcer.PeopleBaseDN != "ou=people,dc=example,dc=com" {
+		t.Errorf("Expected PeopleBaseDN 'ou=people,dc=example,dc=com', got '%s'", config.LDAPEnforcer.PeopleBaseDN)
 	}
-	if config.LDAPEnforcer.ServiceBaseDN != "ou=services,dc=example,dc=com" {
-		t.Errorf("Expected ServiceBaseDN 'ou=services,dc=example,dc=com', got '%s'", config.LDAPEnforcer.ServiceBaseDN)
+	if config.LDAPEnforcer.SvcAcctBaseDN != "ou=svcaccts,dc=example,dc=com" {
+		t.Errorf("Expected SvcAcctBaseDN 'ou=svcaccts,dc=example,dc=com', got '%s'", config.LDAPEnforcer.SvcAcctBaseDN)
 	}
 	if config.LDAPEnforcer.GroupBaseDN != "ou=groups,dc=example,dc=com" {
 		t.Errorf("Expected GroupBaseDN 'ou=groups,dc=example,dc=com', got '%s'", config.LDAPEnforcer.GroupBaseDN)
@@ -116,6 +116,8 @@ func TestMergeWithFlags(t *testing.T) {
 	// Set some flag values
 	flags.Set("ldap-uri", "ldap://flagtest.com")
 	flags.Set("bind-dn", "cn=flaguser,dc=example,dc=com")
+	flags.Set("people-base-dn", "ou=people,dc=flagtest,dc=com")
+	flags.Set("svcacct-base-dn", "ou=svcaccts,dc=flagtest,dc=com")
 	flags.Set("managed-ou", "flag-managed")
 	
 	// Merge with config
@@ -127,6 +129,12 @@ func TestMergeWithFlags(t *testing.T) {
 	}
 	if config.LDAPEnforcer.BindDN != "cn=flaguser,dc=example,dc=com" {
 		t.Errorf("Expected BindDN 'cn=flaguser,dc=example,dc=com', got '%s'", config.LDAPEnforcer.BindDN)
+	}
+	if config.LDAPEnforcer.PeopleBaseDN != "ou=people,dc=flagtest,dc=com" {
+		t.Errorf("Expected PeopleBaseDN 'ou=people,dc=flagtest,dc=com', got '%s'", config.LDAPEnforcer.PeopleBaseDN)
+	}
+	if config.LDAPEnforcer.SvcAcctBaseDN != "ou=svcaccts,dc=flagtest,dc=com" {
+		t.Errorf("Expected SvcAcctBaseDN 'ou=svcaccts,dc=flagtest,dc=com', got '%s'", config.LDAPEnforcer.SvcAcctBaseDN)
 	}
 	if config.LDAPEnforcer.ManagedOU != "flag-managed" {
 		t.Errorf("Expected ManagedOU 'flag-managed', got '%s'", config.LDAPEnforcer.ManagedOU)
@@ -146,8 +154,8 @@ func TestValidate(t *testing.T) {
 					URI:           "ldap://example.com",
 					BindDN:        "cn=admin,dc=example,dc=com",
 					Password:      "password",
-					UserBaseDN:    "ou=users,dc=example,dc=com",
-					ServiceBaseDN: "ou=services,dc=example,dc=com",
+					PeopleBaseDN:  "ou=people,dc=example,dc=com",
+					SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
 					GroupBaseDN:   "ou=groups,dc=example,dc=com",
 					ManagedOU:     "managed",
 				},
@@ -160,8 +168,8 @@ func TestValidate(t *testing.T) {
 				LDAPEnforcer: LDAPEnforcerConfig{
 					BindDN:        "cn=admin,dc=example,dc=com",
 					Password:      "password",
-					UserBaseDN:    "ou=users,dc=example,dc=com",
-					ServiceBaseDN: "ou=services,dc=example,dc=com",
+					PeopleBaseDN:  "ou=people,dc=example,dc=com",
+					SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
 					GroupBaseDN:   "ou=groups,dc=example,dc=com",
 					ManagedOU:     "managed",
 				},
@@ -174,8 +182,8 @@ func TestValidate(t *testing.T) {
 				LDAPEnforcer: LDAPEnforcerConfig{
 					URI:           "ldap://example.com",
 					BindDN:        "cn=admin,dc=example,dc=com",
-					UserBaseDN:    "ou=users,dc=example,dc=com",
-					ServiceBaseDN: "ou=services,dc=example,dc=com",
+					PeopleBaseDN:  "ou=people,dc=example,dc=com",
+					SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
 					GroupBaseDN:   "ou=groups,dc=example,dc=com",
 					ManagedOU:     "managed",
 				},
@@ -189,8 +197,8 @@ func TestValidate(t *testing.T) {
 					URI:           "ldap://example.com",
 					BindDN:        "cn=admin,dc=example,dc=com",
 					PasswordFile:  "path/to/password.txt",
-					UserBaseDN:    "ou=users,dc=example,dc=com",
-					ServiceBaseDN: "ou=services,dc=example,dc=com",
+					PeopleBaseDN:  "ou=people,dc=example,dc=com",
+					SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
 					GroupBaseDN:   "ou=groups,dc=example,dc=com",
 					ManagedOU:     "managed",
 				},
