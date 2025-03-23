@@ -100,6 +100,11 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 		t.Errorf("Expected objectClass to be %v, got %v", expectedClasses, minAttrs["objectClass"])
 	}
 
+	// Check that sn is set to username
+	if minAttrs["sn"] == nil || minAttrs["sn"][0] != "backup" {
+		t.Errorf("Expected sn attribute to be set to username 'backup', got %v", minAttrs["sn"])
+	}
+
 	// Test a complete service account
 	fullSvcAcct := &model.SvcAcct{
 		Username:    "auth",
@@ -126,6 +131,11 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 	expectedPosixClasses := []string{"top", "inetOrgPerson", "posixAccount"}
 	if !reflect.DeepEqual(fullAttrs["objectClass"], expectedPosixClasses) {
 		t.Errorf("Expected objectClass to be %v, got %v", expectedPosixClasses, fullAttrs["objectClass"])
+	}
+
+	// Check that sn is set to username
+	if fullAttrs["sn"] == nil || fullAttrs["sn"][0] != "auth" {
+		t.Errorf("Expected sn attribute to be set to username 'auth', got %v", fullAttrs["sn"])
 	}
 
 	if fullAttrs["uidNumber"] == nil || fullAttrs["uidNumber"][0] != "1050" {

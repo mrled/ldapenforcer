@@ -93,6 +93,7 @@ func GetSvcAcctAttributes(svcacct *model.SvcAcct) map[string][]string {
 		"objectClass": objectClasses,
 		"cn":          {svcacct.CN},
 		"description": {svcacct.Description},
+		"sn":          {svcacct.Username}, // Set sn to username for inetOrgPerson compliance
 	}
 
 	// Add optional attributes if set
