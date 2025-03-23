@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/mrled/ldapenforcer/internal/model"
 	"github.com/spf13/pflag"
 )
 
@@ -47,6 +48,15 @@ type LDAPEnforcerConfig struct {
 
 	// List of config files to include
 	Includes []string `toml:"includes"`
+
+	// Person configurations - map of uid to person config
+	Person map[string]*model.Person `toml:"person"`
+
+	// Service account configurations - map of uid to service account config
+	SvcAcct map[string]*model.SvcAcct `toml:"svcacct"`
+
+	// Group configurations - map of group name to group config
+	Group map[string]*model.Group `toml:"group"`
 }
 
 // LoadConfig loads configuration from the specified file
@@ -133,6 +143,36 @@ func (c *Config) merge(other *Config) {
 	}
 	if other.LDAPEnforcer.ManagedOU != "" {
 		c.LDAPEnforcer.ManagedOU = other.LDAPEnforcer.ManagedOU
+	}
+	
+	// Merge people
+	if other.LDAPEnforcer.Person != nil {
+		if c.LDAPEnforcer.Person == nil {
+			c.LDAPEnforcer.Person = make(map[string]*model.Person)
+		}
+		for uid, person := range other.LDAPEnforcer.Person {
+			c.LDAPEnforcer.Person[uid] = person
+		}
+	}
+	
+	// Merge service accounts
+	if other.LDAPEnforcer.SvcAcct != nil {
+		if c.LDAPEnforcer.SvcAcct == nil {
+			c.LDAPEnforcer.SvcAcct = make(map[string]*model.SvcAcct)
+		}
+		for uid, svcacct := range other.LDAPEnforcer.SvcAcct {
+			c.LDAPEnforcer.SvcAcct[uid] = svcacct
+		}
+	}
+	
+	// Merge groups
+	if other.LDAPEnforcer.Group != nil {
+		if c.LDAPEnforcer.Group == nil {
+			c.LDAPEnforcer.Group = make(map[string]*model.Group)
+		}
+		for groupname, group := range other.LDAPEnforcer.Group {
+			c.LDAPEnforcer.Group[groupname] = group
+		}
 	}
 }
 

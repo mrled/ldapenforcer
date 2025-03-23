@@ -1,0 +1,57 @@
+[ldapenforcer]
+# LDAP Connection Settings
+uri = "ldap://example.com:389"
+bind_dn = "cn=admin,dc=example,dc=com"
+password = "admin_password"
+# OR
+# password_file = "/path/to/password/file.txt"
+
+# Directory Structure
+people_base_dn = "ou=people,dc=example,dc=com"
+svcacct_base_dn = "ou=svcaccts,dc=example,dc=com"
+group_base_dn = "ou=groups,dc=example,dc=com"
+managed_ou = "enforced"
+
+# Person definitions
+[ldapenforcer.person.micahrl]
+cn = "Micah R Ledbetter"
+givenName = "Micah"
+sn = "Ledbetter"
+mail = "me@micahrl.com"
+posix = [10069, 10101]  # UID number, GID number
+
+[ldapenforcer.person.jdoe]
+cn = "John Doe"
+mail = "jdoe@example.com"
+posix = [10070, 10102]
+
+# Service account definitions
+[ldapenforcer.svcacct.authenticator]
+cn = "Authenticator"
+description = "A service account for authenticating users"
+
+[ldapenforcer.svcacct.backups]
+cn = "Backup Service"
+description = "A service account for performing backups"
+posix = [10200]  # Only GID number needed for service accounts
+
+# Group definitions
+[ldapenforcer.group.admins]
+description = "Administrative users"
+posixGidNumber = 10100
+people = ["micahrl"]
+svcaccts = ["authenticator"]
+groups = []
+
+[ldapenforcer.group.users]
+description = "Regular users"
+posixGidNumber = 10101
+people = ["jdoe"]
+svcaccts = []
+groups = []
+
+[ldapenforcer.group.all]
+description = "All users and services"
+people = []
+svcaccts = []
+groups = ["admins", "users"]  # Nested groups - members are included
