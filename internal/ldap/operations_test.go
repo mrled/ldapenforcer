@@ -11,7 +11,8 @@ import (
 func TestGetPersonAttributes(t *testing.T) {
 	// Test a minimal person
 	minimalPerson := &model.Person{
-		CN: "John Doe",
+		Username: "jdoe",
+		CN:       "John Doe",
 	}
 	minAttrs := GetPersonAttributes(minimalPerson)
 
@@ -25,6 +26,7 @@ func TestGetPersonAttributes(t *testing.T) {
 
 	// Test a complete person
 	fullPerson := &model.Person{
+		Username:  "jsmith",
 		CN:        "Jane Smith",
 		GivenName: "Jane",
 		SN:        "Smith",
@@ -61,11 +63,17 @@ func TestGetPersonAttributes(t *testing.T) {
 	if fullAttrs["gidNumber"] == nil || fullAttrs["gidNumber"][0] != "1001" {
 		t.Errorf("Expected gidNumber attribute to be '1001', got %v", fullAttrs["gidNumber"])
 	}
+
+	// homeDirectory should be set based on username field
+	if fullAttrs["homeDirectory"] == nil || fullAttrs["homeDirectory"][0] != "/home/jsmith" {
+		t.Errorf("Expected homeDirectory to be '/home/jsmith', got %v", fullAttrs["homeDirectory"])
+	}
 }
 
 func TestGetSvcAcctAttributes(t *testing.T) {
 	// Test a minimal service account
 	minimalSvcAcct := &model.SvcAcct{
+		Username:    "backup",
 		CN:          "Backup Service",
 		Description: "Service for backups",
 	}
@@ -81,6 +89,7 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 
 	// Test a complete service account
 	fullSvcAcct := &model.SvcAcct{
+		Username:    "auth",
 		CN:          "Auth Service",
 		Description: "Authentication service",
 		Mail:        "auth@example.com",
@@ -111,6 +120,11 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 
 	if fullAttrs["gidNumber"] == nil || fullAttrs["gidNumber"][0] != "1051" {
 		t.Errorf("Expected gidNumber attribute to be '1051', got %v", fullAttrs["gidNumber"])
+	}
+
+	// homeDirectory should be set based on username field
+	if fullAttrs["homeDirectory"] == nil || fullAttrs["homeDirectory"][0] != "/home/auth" {
+		t.Errorf("Expected homeDirectory to be '/home/auth', got %v", fullAttrs["homeDirectory"])
 	}
 }
 

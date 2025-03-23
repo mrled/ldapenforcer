@@ -2,6 +2,10 @@ package model
 
 // Person represents a person in LDAP
 type Person struct {
+	// Username (uid) - used for DN and home directory
+	// This is set from the map key in the configuration
+	Username string `toml:"-"`
+
 	// Common name (CN)
 	CN string `toml:"cn"`
 

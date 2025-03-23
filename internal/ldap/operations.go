@@ -54,7 +54,14 @@ func GetPersonAttributes(person *model.Person) map[string][]string {
 		attrs["objectClass"] = append(attrs["objectClass"], "posixAccount")
 		attrs["uidNumber"] = []string{strconv.Itoa(person.GetUIDNumber())}
 		attrs["gidNumber"] = []string{strconv.Itoa(person.GetGIDNumber())}
-		attrs["homeDirectory"] = []string{fmt.Sprintf("/home/%s", person.CN)}
+
+		// Set homeDirectory based on username field
+		if person.Username != "" {
+			attrs["homeDirectory"] = []string{fmt.Sprintf("/home/%s", person.Username)}
+		} else {
+			attrs["homeDirectory"] = []string{"/nonexistent"}
+		}
+
 		attrs["loginShell"] = []string{"/bin/bash"}
 	}
 
@@ -79,7 +86,14 @@ func GetSvcAcctAttributes(svcacct *model.SvcAcct) map[string][]string {
 		attrs["objectClass"] = append(attrs["objectClass"], "posixAccount")
 		attrs["uidNumber"] = []string{strconv.Itoa(svcacct.GetUIDNumber())}
 		attrs["gidNumber"] = []string{strconv.Itoa(svcacct.GetGIDNumber())}
-		attrs["homeDirectory"] = []string{"/nonexistent"}
+
+		// Set homeDirectory based on username field
+		if svcacct.Username != "" {
+			attrs["homeDirectory"] = []string{fmt.Sprintf("/home/%s", svcacct.Username)}
+		} else {
+			attrs["homeDirectory"] = []string{"/nonexistent"}
+		}
+
 		attrs["loginShell"] = []string{"/usr/sbin/nologin"}
 	}
 
@@ -171,6 +185,11 @@ func (c *Client) SyncPerson(uid string, person *model.Person) error {
 		return err
 	}
 
+	// Set the Username field with the uid if it's not already set
+	if person.Username == "" {
+		person.Username = uid
+	}
+
 	attrs := GetPersonAttributes(person)
 
 	if exists {
@@ -192,6 +211,11 @@ func (c *Client) SyncSvcAcct(uid string, svcacct *model.SvcAcct) error {
 	exists, err := c.EntryExists(dn)
 	if err != nil {
 		return err
+	}
+
+	// Set the Username field with the uid if it's not already set
+	if svcacct.Username == "" {
+		svcacct.Username = uid
 	}
 
 	attrs := GetSvcAcctAttributes(svcacct)

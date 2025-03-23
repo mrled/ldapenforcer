@@ -151,6 +151,8 @@ func (c *Config) merge(other *Config) {
 			c.LDAPEnforcer.Person = make(map[string]*model.Person)
 		}
 		for uid, person := range other.LDAPEnforcer.Person {
+			// Set the Username field with the uid (map key)
+			person.Username = uid
 			c.LDAPEnforcer.Person[uid] = person
 		}
 	}
@@ -161,6 +163,8 @@ func (c *Config) merge(other *Config) {
 			c.LDAPEnforcer.SvcAcct = make(map[string]*model.SvcAcct)
 		}
 		for uid, svcacct := range other.LDAPEnforcer.SvcAcct {
+			// Set the Username field with the uid (map key)
+			svcacct.Username = uid
 			c.LDAPEnforcer.SvcAcct[uid] = svcacct
 		}
 	}
