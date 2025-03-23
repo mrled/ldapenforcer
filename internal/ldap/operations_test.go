@@ -84,7 +84,7 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 		CN:          "Auth Service",
 		Description: "Authentication service",
 		Mail:        "auth@example.com",
-		Posix:       []int{1050},
+		Posix:       []int{1050, 1051},
 	}
 	fullAttrs := GetSvcAcctAttributes(fullSvcAcct)
 	
@@ -105,8 +105,12 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 		t.Errorf("Expected objectClass to include posixAccount, got %v", fullAttrs["objectClass"])
 	}
 	
-	if fullAttrs["gidNumber"] == nil || fullAttrs["gidNumber"][0] != "1050" {
-		t.Errorf("Expected gidNumber attribute to be '1050', got %v", fullAttrs["gidNumber"])
+	if fullAttrs["uidNumber"] == nil || fullAttrs["uidNumber"][0] != "1050" {
+		t.Errorf("Expected uidNumber attribute to be '1050', got %v", fullAttrs["uidNumber"])
+	}
+	
+	if fullAttrs["gidNumber"] == nil || fullAttrs["gidNumber"][0] != "1051" {
+		t.Errorf("Expected gidNumber attribute to be '1051', got %v", fullAttrs["gidNumber"])
 	}
 }
 

@@ -77,8 +77,8 @@ func GetSvcAcctAttributes(svcacct *model.SvcAcct) map[string][]string {
 	// Add POSIX attributes if set
 	if svcacct.IsPosix() {
 		attrs["objectClass"] = append(attrs["objectClass"], "posixAccount")
+		attrs["uidNumber"] = []string{strconv.Itoa(svcacct.GetUIDNumber())}
 		attrs["gidNumber"] = []string{strconv.Itoa(svcacct.GetGIDNumber())}
-		attrs["uidNumber"] = []string{strconv.Itoa(10000 + svcacct.GetGIDNumber())} // This is a placeholder
 		attrs["homeDirectory"] = []string{"/nonexistent"}
 		attrs["loginShell"] = []string{"/usr/sbin/nologin"}
 	}

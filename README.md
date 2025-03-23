@@ -96,7 +96,7 @@ posix = [1000, 1000]  # [UID number, GID number], optional
 cn = "Service Name"
 description = "Service description"  # required
 mail = "service@example.com"  # optional
-posix = [1000]  # [GID number], optional
+posix = [1000, 1000]  # [UID number, GID number], optional
 
 # Group definitions
 [ldapenforcer.group.groupname]
@@ -128,9 +128,9 @@ Service accounts are defined under the `[ldapenforcer.svcacct.<uid>]` section:
 - `cn`: Common Name
 - `description`: Description (required)
 - `mail`: Email address (optional)
-- `posix`: POSIX GID number as `[GID number]` (optional)
+- `posix`: POSIX attributes as `[UID number, GID number]` (optional)
 
-If `posix` is provided, the service account will be created with the `posixAccount` objectClass.
+If `posix` is provided, the service account will be created with the `posixAccount` objectClass. Both UID and GID numbers are required for POSIX accounts.
 
 ### Group Configuration
 

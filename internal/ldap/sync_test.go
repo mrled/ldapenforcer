@@ -41,7 +41,7 @@ func TestSyncWorkflow(t *testing.T) {
 					CN:          "Backup Service",
 					Description: "Backup service for system files",
 					Mail:        "backup@example.com",
-					Posix:       []int{1050},
+					Posix:       []int{1050, 1050},
 				},
 			},
 			Group: map[string]*model.Group{

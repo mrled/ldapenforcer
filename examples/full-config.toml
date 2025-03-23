@@ -33,7 +33,7 @@ description = "A service account for authenticating users"
 [ldapenforcer.svcacct.backups]
 cn = "Backup Service"
 description = "A service account for performing backups"
-posix = [10200]  # Only GID number needed for service accounts
+posix = [10200, 10200]  # UID number, GID number (both required for POSIX)
 
 # Group definitions
 [ldapenforcer.group.admins]
