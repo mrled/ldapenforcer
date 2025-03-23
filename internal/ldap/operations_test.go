@@ -24,6 +24,12 @@ func TestGetPersonAttributes(t *testing.T) {
 		t.Errorf("Expected SN attribute to be 'Doe', got %v", minAttrs["sn"])
 	}
 
+	// Check object classes for non-POSIX person
+	expectedClasses := []string{"top", "inetOrgPerson", "account"}
+	if !reflect.DeepEqual(minAttrs["objectClass"], expectedClasses) {
+		t.Errorf("Expected objectClass to be %v, got %v", expectedClasses, minAttrs["objectClass"])
+	}
+
 	// Test a complete person
 	fullPerson := &model.Person{
 		Username:  "jsmith",
@@ -51,9 +57,10 @@ func TestGetPersonAttributes(t *testing.T) {
 		t.Errorf("Expected mail attribute to be 'jane.smith@example.com', got %v", fullAttrs["mail"])
 	}
 
-	// Check POSIX attributes
-	if !reflect.DeepEqual(fullAttrs["objectClass"], []string{"top", "person", "organizationalPerson", "inetOrgPerson", "posixAccount"}) {
-		t.Errorf("Expected objectClass to include posixAccount, got %v", fullAttrs["objectClass"])
+	// Check POSIX attributes and object classes
+	expectedPosixClasses := []string{"top", "inetOrgPerson", "posixAccount"}
+	if !reflect.DeepEqual(fullAttrs["objectClass"], expectedPosixClasses) {
+		t.Errorf("Expected objectClass to be %v, got %v", expectedPosixClasses, fullAttrs["objectClass"])
 	}
 
 	if fullAttrs["uidNumber"] == nil || fullAttrs["uidNumber"][0] != "1001" {
@@ -87,6 +94,12 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 		t.Errorf("Expected description attribute to be 'Service for backups', got %v", minAttrs["description"])
 	}
 
+	// Check object classes for non-POSIX service account
+	expectedClasses := []string{"top", "inetOrgPerson", "account"}
+	if !reflect.DeepEqual(minAttrs["objectClass"], expectedClasses) {
+		t.Errorf("Expected objectClass to be %v, got %v", expectedClasses, minAttrs["objectClass"])
+	}
+
 	// Test a complete service account
 	fullSvcAcct := &model.SvcAcct{
 		Username:    "auth",
@@ -109,9 +122,10 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 		t.Errorf("Expected mail attribute to be 'auth@example.com', got %v", fullAttrs["mail"])
 	}
 
-	// Check POSIX attributes
-	if !reflect.DeepEqual(fullAttrs["objectClass"], []string{"top", "account", "simpleSecurityObject", "posixAccount"}) {
-		t.Errorf("Expected objectClass to include posixAccount, got %v", fullAttrs["objectClass"])
+	// Check POSIX attributes and object classes
+	expectedPosixClasses := []string{"top", "inetOrgPerson", "posixAccount"}
+	if !reflect.DeepEqual(fullAttrs["objectClass"], expectedPosixClasses) {
+		t.Errorf("Expected objectClass to be %v, got %v", expectedPosixClasses, fullAttrs["objectClass"])
 	}
 
 	if fullAttrs["uidNumber"] == nil || fullAttrs["uidNumber"][0] != "1050" {

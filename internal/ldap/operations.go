@@ -35,8 +35,18 @@ func (c *Client) GroupToDN(groupname string) string {
 
 // GetPersonAttributes converts a Person to LDAP attributes
 func GetPersonAttributes(person *model.Person) map[string][]string {
+	// Base object classes
+	objectClasses := []string{"top", "inetOrgPerson"}
+
+	// Add either account or posixAccount based on POSIX status
+	if person.IsPosix() {
+		objectClasses = append(objectClasses, "posixAccount")
+	} else {
+		objectClasses = append(objectClasses, "account")
+	}
+
 	attrs := map[string][]string{
-		"objectClass": {"top", "person", "organizationalPerson", "inetOrgPerson"},
+		"objectClass": objectClasses,
 		"cn":          {person.CN},
 		"sn":          {person.GetSN()},
 	}
@@ -51,7 +61,6 @@ func GetPersonAttributes(person *model.Person) map[string][]string {
 
 	// Add POSIX attributes if set
 	if person.IsPosix() {
-		attrs["objectClass"] = append(attrs["objectClass"], "posixAccount")
 		attrs["uidNumber"] = []string{strconv.Itoa(person.GetUIDNumber())}
 		attrs["gidNumber"] = []string{strconv.Itoa(person.GetGIDNumber())}
 
@@ -70,8 +79,18 @@ func GetPersonAttributes(person *model.Person) map[string][]string {
 
 // GetSvcAcctAttributes converts a SvcAcct to LDAP attributes
 func GetSvcAcctAttributes(svcacct *model.SvcAcct) map[string][]string {
+	// Base object classes
+	objectClasses := []string{"top", "inetOrgPerson"}
+
+	// Add either account or posixAccount based on POSIX status
+	if svcacct.IsPosix() {
+		objectClasses = append(objectClasses, "posixAccount")
+	} else {
+		objectClasses = append(objectClasses, "account")
+	}
+
 	attrs := map[string][]string{
-		"objectClass": {"top", "account", "simpleSecurityObject"},
+		"objectClass": objectClasses,
 		"cn":          {svcacct.CN},
 		"description": {svcacct.Description},
 	}
@@ -83,7 +102,6 @@ func GetSvcAcctAttributes(svcacct *model.SvcAcct) map[string][]string {
 
 	// Add POSIX attributes if set
 	if svcacct.IsPosix() {
-		attrs["objectClass"] = append(attrs["objectClass"], "posixAccount")
 		attrs["uidNumber"] = []string{strconv.Itoa(svcacct.GetUIDNumber())}
 		attrs["gidNumber"] = []string{strconv.Itoa(svcacct.GetGIDNumber())}
 
