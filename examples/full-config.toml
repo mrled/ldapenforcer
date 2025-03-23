@@ -54,4 +54,16 @@ groups = []
 description = "All users and services"
 people = []
 svcaccts = []
-groups = ["admins", "users"]  # Nested groups - members are included
+groups = ["admins", "users", "cycle1"]  # Nested groups - members are included
+
+[ldapenforcer.group.cycle1]
+description = "Cyclic group 1"
+people = []
+svcaccts = []
+groups = ["cycle2"]
+
+[ldapenforcer.group.cycle2]
+description = "Cyclic group 2"
+people = []
+svcaccts = []
+groups = ["cycle1"]
