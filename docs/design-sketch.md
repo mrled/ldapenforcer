@@ -1,3 +1,12 @@
+# Design sketch
+
+This was a design sketch originally intended to be passed to ChatGPT o1.
+I didn't end up using it directly,
+but instead fed prompts to Claude Code adapted from this,
+little bits at a time.
+
+## Sketch
+
 Write a Go program that manages users and groups in an LDAP server.
 Program name: ldapenforcer
 
