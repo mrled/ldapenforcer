@@ -8,7 +8,8 @@
 - Lint: `golangci-lint run`
 
 ## Code Style Guidelines
-- **Formatting**: Run `go fmt ./...` before commits
+- **Formatting**: Code in standard Go style, with tabs instead of spaces, but no tabs on otherwise empty lines
+- **Post-processing**: Run `go fmt ./...` at the end of every edit
 - **Imports**: Group stdlib, third-party, and project imports with blank lines
 - **Types**: Use explicit types, avoid unnecessary interface{}
 - **Naming**:
