@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/mrled/ldapenforcer/internal/logging"
@@ -59,6 +60,9 @@ type LDAPEnforcerConfig struct {
 	// Full OU for enforced groups
 	EnforcedGroupOU string `toml:"enforced_group_ou"`
 
+	// Config polling interval in seconds (0 = disabled)
+	ConfigPollInterval int `toml:"config_poll_interval"`
+
 	// List of config files to include
 	Includes []string `toml:"includes"`
 
@@ -105,6 +109,9 @@ func LoadConfig(configFile string) (*Config, error) {
 		return nil, fmt.Errorf("failed to resolve absolute path for config file: %w", err)
 	}
 	configDir = filepath.Dir(absConfigFile)
+
+	// Store the main config file path for monitoring
+	SetMainConfigFile(absConfigFile)
 
 	// Load the main config file
 	err = config.loadConfigFile(configFile)
@@ -259,6 +266,8 @@ func (c *Config) merge(other *Config) {
 
 // configDir stores the directory of the main config file
 var configDir string
+var mainConfigFile string
+var configFileModTimes map[string]time.Time
 
 // GetConfigDir returns the directory of the main config file
 func GetConfigDir() (string, error) {
@@ -266,6 +275,112 @@ func GetConfigDir() (string, error) {
 		return "", fmt.Errorf("config directory not set, config file may not have been loaded")
 	}
 	return configDir, nil
+}
+
+// GetMainConfigFile returns the path to the main config file
+func GetMainConfigFile() string {
+	return mainConfigFile
+}
+
+// SetMainConfigFile sets the path to the main config file
+func SetMainConfigFile(filepath string) {
+	mainConfigFile = filepath
+}
+
+// InitConfigFileMonitoring initializes the config file modification time map
+func InitConfigFileMonitoring(cfg *Config) error {
+	configFileModTimes = make(map[string]time.Time)
+
+	// Add main config file
+	if mainConfigFile == "" {
+		return fmt.Errorf("main config file path is not set")
+	}
+
+	abspath, err := filepath.Abs(mainConfigFile)
+	if err != nil {
+		return fmt.Errorf("failed to resolve absolute path for %s: %w", mainConfigFile, err)
+	}
+
+	info, err := os.Stat(abspath)
+	if err != nil {
+		return fmt.Errorf("failed to get file info for %s: %w", abspath, err)
+	}
+
+	configFileModTimes[abspath] = info.ModTime()
+
+	// Add all included config files
+	return addIncludedConfigFiles(cfg, abspath)
+}
+
+// addIncludedConfigFiles recursively adds all included config files to the monitoring map
+func addIncludedConfigFiles(cfg *Config, parentFile string) error {
+	// Get the directory of the parent file
+	parentDir := filepath.Dir(parentFile)
+
+	// Process all includes
+	for _, include := range cfg.LDAPEnforcer.Includes {
+		var includePath string
+		if filepath.IsAbs(include) {
+			includePath = include
+		} else {
+			includePath = filepath.Join(parentDir, include)
+		}
+
+		// Resolve absolute path
+		absIncludePath, err := filepath.Abs(includePath)
+		if err != nil {
+			return fmt.Errorf("failed to resolve absolute path for %s: %w", includePath, err)
+		}
+
+		// Skip if already processed
+		if _, exists := configFileModTimes[absIncludePath]; exists {
+			continue
+		}
+
+		// Get file info
+		info, err := os.Stat(absIncludePath)
+		if err != nil {
+			return fmt.Errorf("failed to get file info for %s: %w", absIncludePath, err)
+		}
+
+		// Add to map
+		configFileModTimes[absIncludePath] = info.ModTime()
+
+		// Load the included file to check for nested includes
+		var includedConfig Config
+		_, err = toml.DecodeFile(absIncludePath, &includedConfig)
+		if err != nil {
+			return fmt.Errorf("failed to decode config file %s: %w", absIncludePath, err)
+		}
+
+		// Process nested includes
+		if len(includedConfig.LDAPEnforcer.Includes) > 0 {
+			err = addIncludedConfigFiles(&includedConfig, absIncludePath)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// CheckConfigFilesChanged checks if any of the config files have changed
+// Returns true if any file has changed, false otherwise
+func CheckConfigFilesChanged() (bool, error) {
+	for filepath, oldModTime := range configFileModTimes {
+		info, err := os.Stat(filepath)
+		if err != nil {
+			return false, fmt.Errorf("failed to get file info for %s: %w", filepath, err)
+		}
+
+		// Check if the file's modification time has changed
+		if !info.ModTime().Equal(oldModTime) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // GetPassword returns the LDAP password, loading it from the password file or command if specified
@@ -401,6 +516,13 @@ func (c *Config) MergeWithEnv() {
 		c.LDAPEnforcer.EnforcedGroupOU = val
 	}
 
+	// Config file polling interval
+	if val := os.Getenv("LDAPENFORCER_CONFIG_POLL_INTERVAL"); val != "" {
+		if interval, err := strconv.Atoi(val); err == nil && interval > 0 {
+			c.LDAPEnforcer.ConfigPollInterval = interval
+		}
+	}
+
 	// Includes - process as comma-separated list
 	if val := os.Getenv("LDAPENFORCER_INCLUDES"); val != "" {
 		includes := strings.Split(val, ",")
@@ -426,6 +548,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("enforced-people-ou", "", "Full OU for enforced people")
 	flags.String("enforced-svcacct-ou", "", "Full OU for enforced service accounts")
 	flags.String("enforced-group-ou", "", "Full OU for enforced groups")
+	flags.Int("config-poll-interval", 0, "Interval in seconds to check for config changes (0 = disabled, recommended: 5, min: 1)")
 }
 
 // MergeWithFlags merges command line flag values into the config
@@ -465,6 +588,9 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	}
 	if enforcedGroupOU, _ := flags.GetString("enforced-group-ou"); enforcedGroupOU != "" {
 		c.LDAPEnforcer.EnforcedGroupOU = enforcedGroupOU
+	}
+	if pollInterval, _ := flags.GetInt("config-poll-interval"); pollInterval > 0 {
+		c.LDAPEnforcer.ConfigPollInterval = pollInterval
 	}
 }
 

@@ -2,8 +2,14 @@ package ldapenforcer
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/mrled/ldapenforcer/internal/config"
 	"github.com/mrled/ldapenforcer/internal/ldap"
+	"github.com/mrled/ldapenforcer/internal/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -23,29 +29,92 @@ var syncCmd = &cobra.Command{
 			return fmt.Errorf("configuration is invalid: %w", err)
 		}
 
-		// Create LDAP client
-		client, err := ldap.NewClient(cfg)
-		if err != nil {
-			return fmt.Errorf("failed to create LDAP client: %w", err)
-		}
-		defer client.Close()
-
-		// Run the sync
-		fmt.Println("Starting LDAP synchronization...")
-
+		// Check if we should run in polling mode
+		pollInterval := cfg.LDAPEnforcer.ConfigPollInterval
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
-		if dryRun {
-			fmt.Println("Dry run mode - no changes will be made")
-			return simulateSync(client)
-		}
 
-		err = client.SyncAll()
-		if err != nil {
-			return fmt.Errorf("synchronization failed: %w", err)
-		}
+		// If polling is enabled, run continuously
+		if pollInterval > 0 {
+			// Limit minimum poll interval
+			if pollInterval < 1 {
+				fmt.Println("Warning: Minimum poll interval is 1 second, using 1 second")
+				pollInterval = 1
+			}
 
-		fmt.Println("LDAP synchronization completed successfully")
-		return nil
+			// Initialize file monitoring
+			err := config.InitConfigFileMonitoring(cfg)
+			if err != nil {
+				return fmt.Errorf("failed to initialize config file monitoring: %w", err)
+			}
+
+			fmt.Printf("Starting continuous sync with config poll interval of %d seconds\n", pollInterval)
+			fmt.Println("Press Ctrl+C to stop")
+
+			ticker := time.NewTicker(time.Duration(pollInterval) * time.Second)
+			defer ticker.Stop()
+
+			// Run first sync immediately
+			if err := runSync(cfg, dryRun); err != nil {
+				fmt.Printf("Error during initial sync: %v\n", err)
+			}
+
+			// Setup signal handling for graceful shutdown
+			sigChan := make(chan os.Signal, 1)
+			signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+			// Main polling loop
+			for {
+				select {
+				case <-ticker.C:
+					// Check if config files have changed
+					changed, err := config.CheckConfigFilesChanged()
+					if err != nil {
+						fmt.Printf("Error checking config files: %v\n", err)
+						continue
+					}
+
+					if changed {
+						fmt.Println("Config files changed, reloading configuration...")
+
+						// Reload configuration
+						newCfg, err := config.LoadConfig(config.GetMainConfigFile())
+						if err != nil {
+							fmt.Printf("Error reloading config: %v\n", err)
+							continue
+						}
+
+						// Merge with command line flags
+						newCfg.MergeWithFlags(cmd.Flags())
+
+						// Update the global config
+						cfg = newCfg
+
+						// Reinitialize file monitoring with new config
+						err = config.InitConfigFileMonitoring(cfg)
+						if err != nil {
+							fmt.Printf("Error reinitializing file monitoring: %v\n", err)
+							continue
+						}
+
+						// Run sync with new configuration
+						if err := runSync(cfg, dryRun); err != nil {
+							fmt.Printf("Error during sync after config reload: %v\n", err)
+						}
+					} else {
+						// Optionally run sync even without config changes
+						if err := runSync(cfg, dryRun); err != nil {
+							fmt.Printf("Error during periodic sync: %v\n", err)
+						}
+					}
+				case <-sigChan:
+					fmt.Println("\nReceived interrupt signal, shutting down...")
+					return nil
+				}
+			}
+		} else {
+			// Run once without polling
+			return runSync(cfg, dryRun)
+		}
 	},
 }
 
@@ -226,6 +295,32 @@ func simulateSync(client *ldap.Client) error {
 	fmt.Printf("- Would sync %d service accounts\n", len(cfg.LDAPEnforcer.SvcAcct))
 	fmt.Printf("- Would sync %d groups\n", len(cfg.LDAPEnforcer.Group))
 
+	return nil
+}
+
+// runSync runs a single synchronization operation
+func runSync(cfg *config.Config, dryRun bool) error {
+	logging.DefaultLogger.Debug("Starting LDAP synchronization...")
+
+	// Create LDAP client
+	client, err := ldap.NewClient(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create LDAP client: %w", err)
+	}
+	defer client.Close()
+
+	// Run the sync
+	if dryRun {
+		logging.DefaultLogger.Info("Dry run mode - no changes will be made")
+		return simulateSync(client)
+	}
+
+	err = client.SyncAll()
+	if err != nil {
+		return fmt.Errorf("synchronization failed: %w", err)
+	}
+
+	logging.DefaultLogger.Info("LDAP synchronization completed successfully")
 	return nil
 }
 
