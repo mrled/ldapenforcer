@@ -183,6 +183,7 @@ func (c *Client) ModifyEntry(dn string, mods map[string][]string, operation int)
 	}
 
 	// Execute modify request
+	logging.LDAPProtocolLogger.Trace("Sending LDAP Modify request: %+v", modReq)
 	err := c.conn.Modify(modReq)
 	if err != nil {
 		logging.LDAPProtocolLogger.Error("Failed to modify LDAP entry: %v", err)
