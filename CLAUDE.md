@@ -23,6 +23,7 @@
 - **Comments**: Document all functions, types, and constants
 - **Logging**: Use structured logging with appropriate levels
 - **Testing**: Write tests for all features
+- **Committing**: Never commit code yourself
 
 ## Project Structure
 - `/cmd`: Main applications
