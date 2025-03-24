@@ -28,6 +28,16 @@ password = "admin_password"
 # ca_cert_file = "/path/to/ca.crt"  # Absolute path
 # ca_cert_file = "certs/ca.crt"  # Relative to config file
 
+# Log level - controls the verbosity of the application
+# Valid values: ERROR, WARN, INFO, DEBUG, LDAP, TRACE (case-insensitive)
+# ERROR: Only error messages
+# WARN: Warnings and errors
+# INFO: Informational messages, warnings, and errors (default)
+# DEBUG: Debug messages and all above
+# LDAP: LDAP protocol debugging (very verbose) and all above
+# TRACE: Trace messages (extremely verbose) and all above
+log_level = "INFO"
+
 # Directory Structure
 # Base DN for people (required)
 people_base_dn = "ou=people,dc=example,dc=com"

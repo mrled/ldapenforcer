@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/mrled/ldapenforcer/internal/config"
+	"github.com/mrled/ldapenforcer/internal/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -41,6 +42,22 @@ enforcing policies on LDAP directories.`,
 			// If no config file, create an empty config with just flags
 			cfg = &config.Config{}
 			cfg.MergeWithFlags(cmd.Flags())
+		}
+
+		// Initialize logging system with configured log level
+		if cfg.LDAPEnforcer.LogLevel != "" {
+			logLevel, err := logging.ParseLevel(cfg.LDAPEnforcer.LogLevel)
+			if err != nil {
+				// Just print a warning but continue with default log level
+				fmt.Fprintf(os.Stderr, "Warning: Invalid log level '%s', using INFO level instead\n", cfg.LDAPEnforcer.LogLevel)
+				logging.SetLevel(logging.InfoLevel)
+			} else {
+				logging.SetLevel(logLevel)
+				logging.Debug("Log level set to %s", logging.GetLevelName(logLevel))
+			}
+		} else {
+			// Default to INFO level if not specified
+			logging.SetLevel(logging.InfoLevel)
 		}
 
 		return nil

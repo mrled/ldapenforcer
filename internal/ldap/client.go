@@ -4,13 +4,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/mrled/ldapenforcer/internal/config"
+	"github.com/mrled/ldapenforcer/internal/logging"
 )
 
 // Client represents an LDAP client
@@ -26,6 +26,11 @@ func NewClient(cfg *config.Config) (*Client, error) {
 
 	// Check if using LDAPS and configure TLS if needed
 	isLDAPS := strings.HasPrefix(strings.ToLower(cfg.LDAPEnforcer.URI), "ldaps://")
+	
+	logging.Debug("Connecting to LDAP server at %s", cfg.LDAPEnforcer.URI)
+	if isLDAPS {
+		logging.Debug("Using LDAPS (secure) connection")
+	}
 
 	if isLDAPS && cfg.LDAPEnforcer.CACertFile != "" {
 		// Get the CA certificate file path, resolving it if needed
@@ -39,42 +44,58 @@ func NewClient(cfg *config.Config) (*Client, error) {
 			}
 		}
 
+		logging.Debug("Using CA certificate from %s", caCertPath)
+		
 		// Load CA certificate
 		tlsConfig, err := createTLSConfig(caCertPath)
 		if err != nil {
+			logging.Error("Failed to create TLS config: %v", err)
 			return nil, fmt.Errorf("failed to create TLS config: %w", err)
 		}
 
 		// Connect with TLS
+		logging.LDAP("Dialing LDAPS URL %s with custom TLS config", cfg.LDAPEnforcer.URI)
 		conn, err = ldap.DialURL(cfg.LDAPEnforcer.URI, ldap.DialWithTLSConfig(tlsConfig))
 	} else {
 		// Connect without TLS or with default TLS
+		logging.LDAP("Dialing LDAP URL %s", cfg.LDAPEnforcer.URI)
 		conn, err = ldap.DialURL(cfg.LDAPEnforcer.URI)
 	}
 
 	if err != nil {
+		logging.Error("Failed to connect to LDAP server: %v", err)
 		return nil, fmt.Errorf("failed to connect to LDAP server: %w", err)
 	}
+	
+	logging.Debug("Successfully connected to LDAP server")
 
 	// Get the password from config, password file, or password command
+	logging.Debug("Getting LDAP bind password")
 	password, err := cfg.GetPassword()
 	if err != nil {
+		logging.Error("Failed to get LDAP password: %v", err)
 		// Only close the connection if it was successfully established
 		if conn != nil {
+			logging.Debug("Closing LDAP connection due to password retrieval failure")
 			conn.Close()
 		}
 		return nil, fmt.Errorf("failed to get LDAP password: %w", err)
 	}
 
 	// Bind with DN and password
+	logging.LDAP("Binding to LDAP server with DN: %s", cfg.LDAPEnforcer.BindDN)
 	err = conn.Bind(cfg.LDAPEnforcer.BindDN, password)
 	if err != nil {
+		logging.Error("Failed to bind to LDAP server: %v", err)
 		// Only close the connection if it was successfully established
 		if conn != nil {
+			logging.Debug("Closing LDAP connection due to bind failure")
 			conn.Close()
 		}
 		return nil, fmt.Errorf("failed to bind to LDAP server: %w", err)
 	}
+	
+	logging.Info("Successfully authenticated to LDAP server")
 
 	return &Client{
 		conn:   conn,
@@ -91,6 +112,8 @@ func (c *Client) Close() {
 
 // Search performs an LDAP search
 func (c *Client) Search(baseDN, filter string, attributes []string) (*ldap.SearchResult, error) {
+	logging.LDAP("LDAP Search: Base DN=%s, Filter=%s, Attributes=%v", baseDN, filter, attributes)
+	
 	searchRequest := ldap.NewSearchRequest(
 		baseDN,
 		ldap.ScopeWholeSubtree,
@@ -105,14 +128,21 @@ func (c *Client) Search(baseDN, filter string, attributes []string) (*ldap.Searc
 
 	result, err := c.conn.Search(searchRequest)
 	if err != nil {
+		logging.Error("LDAP search failed: %v", err)
 		return nil, fmt.Errorf("LDAP search failed: %w", err)
 	}
 
+	logging.LDAP("LDAP Search results: found %d entries", len(result.Entries))
+	logging.Trace("LDAP Search complete: %+v", result)
+	
 	return result, nil
 }
 
 // CreateEntry creates a new LDAP entry
 func (c *Client) CreateEntry(dn string, attributes map[string][]string) error {
+	logging.LDAP("Creating LDAP entry: DN=%s", dn)
+	logging.Trace("LDAP entry attributes: %+v", attributes)
+	
 	// Convert map to ldap.AddRequest
 	addReq := ldap.NewAddRequest(dn, nil)
 	for attr, values := range attributes {
@@ -122,14 +152,32 @@ func (c *Client) CreateEntry(dn string, attributes map[string][]string) error {
 	// Execute add request
 	err := c.conn.Add(addReq)
 	if err != nil {
+		logging.Error("Failed to create LDAP entry: %v", err)
 		return fmt.Errorf("failed to create LDAP entry: %w", err)
 	}
 
+	logging.Info("Successfully created LDAP entry: %s", dn)
 	return nil
 }
 
 // ModifyEntry modifies an existing LDAP entry
 func (c *Client) ModifyEntry(dn string, mods map[string][]string, operation int) error {
+	// Get operation name for logging
+	var opName string
+	switch operation {
+	case ldap.AddAttribute:
+		opName = "Add"
+	case ldap.ReplaceAttribute:
+		opName = "Replace"
+	case ldap.DeleteAttribute:
+		opName = "Delete"
+	default:
+		opName = fmt.Sprintf("Unknown(%d)", operation)
+	}
+	
+	logging.LDAP("Modifying LDAP entry: DN=%s, Operation=%s", dn, opName)
+	logging.Trace("LDAP modify attributes: %+v", mods)
+	
 	// Convert map to ldap.ModifyRequest
 	modReq := ldap.NewModifyRequest(dn, nil)
 	for attr, values := range mods {
@@ -141,6 +189,7 @@ func (c *Client) ModifyEntry(dn string, mods map[string][]string, operation int)
 		case ldap.DeleteAttribute:
 			modReq.Delete(attr, values)
 		default:
+			logging.Error("Invalid LDAP modify operation: %d", operation)
 			return fmt.Errorf("invalid modify operation: %d", operation)
 		}
 	}
@@ -148,25 +197,33 @@ func (c *Client) ModifyEntry(dn string, mods map[string][]string, operation int)
 	// Execute modify request
 	err := c.conn.Modify(modReq)
 	if err != nil {
+		logging.Error("Failed to modify LDAP entry: %v", err)
 		return fmt.Errorf("failed to modify LDAP entry: %w", err)
 	}
 
+	logging.Info("Successfully modified LDAP entry: %s", dn)
 	return nil
 }
 
 // DeleteEntry deletes an LDAP entry
 func (c *Client) DeleteEntry(dn string) error {
+	logging.LDAP("Deleting LDAP entry: DN=%s", dn)
+	
 	delReq := ldap.NewDelRequest(dn, nil)
 	err := c.conn.Del(delReq)
 	if err != nil {
+		logging.Error("Failed to delete LDAP entry: %v", err)
 		return fmt.Errorf("failed to delete LDAP entry: %w", err)
 	}
 
+	logging.Info("Successfully deleted LDAP entry: %s", dn)
 	return nil
 }
 
 // GetEntity retrieves an entity from LDAP
 func (c *Client) GetEntity(dn string, attributes []string) (*ldap.Entry, error) {
+	logging.LDAP("Getting LDAP entity: DN=%s, Attributes=%v", dn, attributes)
+	
 	searchRequest := ldap.NewSearchRequest(
 		dn,
 		ldap.ScopeBaseObject,
@@ -181,18 +238,24 @@ func (c *Client) GetEntity(dn string, attributes []string) (*ldap.Entry, error) 
 
 	result, err := c.conn.Search(searchRequest)
 	if err != nil {
+		logging.Error("LDAP get entity failed: %v", err)
 		return nil, fmt.Errorf("LDAP search failed: %w", err)
 	}
 
 	if len(result.Entries) == 0 {
+		logging.Debug("No LDAP entry found for DN: %s", dn)
 		return nil, fmt.Errorf("no entry found for DN: %s", dn)
 	}
 
+	logging.LDAP("Successfully retrieved LDAP entity: %s", dn)
+	logging.Trace("LDAP entity details: %+v", result.Entries[0])
 	return result.Entries[0], nil
 }
 
 // EntryExists checks if an LDAP entry exists
 func (c *Client) EntryExists(dn string) (bool, error) {
+	logging.LDAP("Checking if LDAP entry exists: DN=%s", dn)
+	
 	searchRequest := ldap.NewSearchRequest(
 		dn,
 		ldap.ScopeBaseObject,
@@ -209,32 +272,41 @@ func (c *Client) EntryExists(dn string) (bool, error) {
 	if err != nil {
 		// If it's a "no such object" error, the entry doesn't exist
 		if ldapErr, ok := err.(*ldap.Error); ok && ldapErr.ResultCode == ldap.LDAPResultNoSuchObject {
+			logging.LDAP("LDAP entry does not exist: %s", dn)
 			return false, nil
 		}
+		logging.Error("LDAP existence check failed: %v", err)
 		return false, fmt.Errorf("LDAP search failed: %w", err)
 	}
 
-	return len(result.Entries) > 0, nil
+	exists := len(result.Entries) > 0
+	logging.LDAP("LDAP entry exists check for %s: %v", dn, exists)
+	return exists, nil
 }
 
 // EnsureOUExists ensures that an OU exists, creating it if needed
 func (c *Client) EnsureOUExists(dn string) error {
+	logging.Debug("Ensuring OU exists: %s", dn)
+	
 	exists, err := c.EntryExists(dn)
 	if err != nil {
 		return err
 	}
 
 	if exists {
+		logging.Debug("OU already exists: %s", dn)
 		return nil
 	}
 
 	// Create the OU
+	ouName := getOUFromDN(dn)
+	logging.Info("Creating OU '%s' with DN: %s", ouName, dn)
+	
 	attributes := map[string][]string{
 		"objectClass": {"top", "organizationalUnit"},
-		"ou":          {ldap.EscapeFilter(getOUFromDN(dn))},
+		"ou":          {ldap.EscapeFilter(ouName)},
 	}
 
-	log.Printf("Creating OU: %s", dn)
 	return c.CreateEntry(dn, attributes)
 }
 
@@ -261,24 +333,32 @@ func getOUFromDN(dn string) string {
 
 // createTLSConfig creates a TLS configuration for LDAPS connections
 func createTLSConfig(caCertFile string) (*tls.Config, error) {
+	logging.Debug("Creating TLS config with CA certificate: %s", caCertFile)
+	
 	// Create a certificate pool with system CA certificates
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
+		logging.Debug("System cert pool not available, creating a new one")
 		// If system cert pool is not available, create a new one
 		rootCAs = x509.NewCertPool()
 	}
 
 	// Read CA certificate
+	logging.LDAP("Reading CA certificate from %s", caCertFile)
 	caCert, err := os.ReadFile(caCertFile)
 	if err != nil {
+		logging.Error("Failed to read CA certificate file: %v", err)
 		return nil, fmt.Errorf("failed to read CA certificate file %s: %w", caCertFile, err)
 	}
 
 	// Add CA certificate to the pool
 	if !rootCAs.AppendCertsFromPEM(caCert) {
+		logging.Error("Failed to append CA certificate from %s", caCertFile)
 		return nil, fmt.Errorf("failed to append CA certificate from %s", caCertFile)
 	}
 
+	logging.LDAP("Successfully added CA certificate to trust store")
+	
 	// Create TLS configuration
 	tlsConfig := &tls.Config{
 		RootCAs: rootCAs,

@@ -3,13 +3,13 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/mrled/ldapenforcer/internal/logging"
 	"github.com/mrled/ldapenforcer/internal/model"
 	"github.com/spf13/pflag"
 )
@@ -45,6 +45,9 @@ type LDAPEnforcerConfig struct {
 
 	// Path to CA certificate file for LDAPS
 	CACertFile string `toml:"ca_cert_file"`
+	
+	// Log level - one of: ERROR, WARN, INFO, DEBUG, LDAP, TRACE
+	LogLevel string `toml:"log_level"`
 
 	// Base DN for people
 	PeopleBaseDN string `toml:"people_base_dn"`
@@ -161,6 +164,9 @@ func (c *Config) merge(other *Config) {
 	if other.LDAPEnforcer.CACertFile != "" {
 		c.LDAPEnforcer.CACertFile = other.LDAPEnforcer.CACertFile
 	}
+	if other.LDAPEnforcer.LogLevel != "" {
+		c.LDAPEnforcer.LogLevel = other.LDAPEnforcer.LogLevel
+	}
 	if other.LDAPEnforcer.PeopleBaseDN != "" {
 		c.LDAPEnforcer.PeopleBaseDN = other.LDAPEnforcer.PeopleBaseDN
 	}
@@ -245,11 +251,11 @@ func (c *Config) GetPassword() (string, error) {
 
 	// Try to execute the password command
 	if c.LDAPEnforcer.PasswordCommand != "" {
-		log.Printf("Executing password command to retrieve LDAP credentials")
+		logging.Debug("Executing password command to retrieve LDAP credentials")
 
 		// Use shell if explicitly requested via password_command_via_shell
 		if c.LDAPEnforcer.PasswordCommandViaShell {
-			log.Printf("Executing password command via shell (sh -c)")
+			logging.Debug("Executing password command via shell (sh -c)")
 			// Use shell to execute the command
 			cmd := exec.Command("sh", "-c", c.LDAPEnforcer.PasswordCommand)
 
@@ -261,13 +267,13 @@ func (c *Config) GetPassword() (string, error) {
 			// Run the command
 			err := cmd.Run()
 			if err != nil {
-				log.Printf("Error executing shell password command: %v", err)
+				logging.Error("Error executing shell password command: %v", err)
 				return "", fmt.Errorf("failed to execute shell password command: %w", err)
 			}
 
 			// Return the password from stdout, trimming whitespace
 			result := strings.TrimSpace(stdout.String())
-			log.Printf("Successfully retrieved password from command (length: %d)", len(result))
+			logging.Debug("Successfully retrieved password from command (length: %d)", len(result))
 			return result, nil
 		} else {
 			// Split the command and its arguments for direct execution
@@ -280,7 +286,7 @@ func (c *Config) GetPassword() (string, error) {
 				return "", fmt.Errorf("empty password command")
 			}
 
-			log.Printf("Executing direct command: %s", parts[0])
+			logging.Debug("Executing direct command: %s", parts[0])
 			// Create the command
 			cmd := exec.Command(parts[0], parts[1:]...)
 
@@ -292,13 +298,13 @@ func (c *Config) GetPassword() (string, error) {
 			// Run the command
 			err = cmd.Run()
 			if err != nil {
-				log.Printf("Error executing password command: %v", err)
+				logging.Error("Error executing password command: %v", err)
 				return "", fmt.Errorf("failed to execute password command: %w", err)
 			}
 
 			// Return the password from stdout, trimming whitespace
 			result := strings.TrimSpace(stdout.String())
-			log.Printf("Successfully retrieved password from command (length: %d)", len(result))
+			logging.Debug("Successfully retrieved password from command (length: %d)", len(result))
 			return result, nil
 		}
 	}
@@ -316,6 +322,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("password-command", "", "Command to execute to retrieve the password")
 	flags.Bool("password-command-via-shell", false, "Execute password command via shell (using sh -c)")
 	flags.String("ca-cert-file", "", "Path to CA certificate file for LDAPS")
+	flags.String("log-level", "INFO", "Log level (ERROR, WARN, INFO, DEBUG, LDAP, TRACE)")
 	flags.String("people-base-dn", "", "Base DN for people")
 	flags.String("svcacct-base-dn", "", "Base DN for service accounts")
 	flags.String("group-base-dn", "", "Base DN for groups")
@@ -344,6 +351,9 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	}
 	if caCertFile, _ := flags.GetString("ca-cert-file"); caCertFile != "" {
 		c.LDAPEnforcer.CACertFile = caCertFile
+	}
+	if logLevel, _ := flags.GetString("log-level"); logLevel != "" {
+		c.LDAPEnforcer.LogLevel = logLevel
 	}
 	if peopleBaseDN, _ := flags.GetString("people-base-dn"); peopleBaseDN != "" {
 		c.LDAPEnforcer.PeopleBaseDN = peopleBaseDN
