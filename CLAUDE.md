@@ -1,5 +1,12 @@
 # CLAUDE.md - Guidelines for LDAPEnforcer
 
+## Making changes
+- Do **not** make unrelated changes
+  - If you notice a change needs to be made that should be broken into a separate commit, write notes about it in a file in the project root called "todo.md". Don't commit this file.
+- **Logging**: Use structured logging with appropriate levels
+- **Testing**: Write tests for all features
+- **Committing**: Never commit code yourself
+
 ## Build/Run/Test Commands
 - Build: `go build`
 - Run: `./ldapenforcer [command]`
@@ -21,9 +28,6 @@
   - Use descriptive error messages
   - Wrap errors with context using `fmt.Errorf("context: %w", err)`
 - **Comments**: Document all functions, types, and constants
-- **Logging**: Use structured logging with appropriate levels
-- **Testing**: Write tests for all features
-- **Committing**: Never commit code yourself
 
 ## Project Structure
 - `/cmd`: Main applications
