@@ -36,7 +36,7 @@ func (c *Client) GroupToDN(groupname string) string {
 // GetPersonAttributes converts a Person to LDAP attributes
 func GetPersonAttributes(person *model.Person) map[string][]string {
 	// Base object classes
-	objectClasses := []string{"top", "inetOrgPerson"}
+	objectClasses := []string{"top", "inetOrgPerson", "nsMemberOf"}
 
 	// Add either account or posixAccount based on POSIX status
 	if person.IsPosix() {
@@ -80,7 +80,7 @@ func GetPersonAttributes(person *model.Person) map[string][]string {
 // GetSvcAcctAttributes converts a SvcAcct to LDAP attributes
 func GetSvcAcctAttributes(svcacct *model.SvcAcct) map[string][]string {
 	// Base object classes
-	objectClasses := []string{"top", "inetOrgPerson"}
+	objectClasses := []string{"top", "inetOrgPerson", "nsMemberOf"}
 
 	// Add either account or posixAccount based on POSIX status
 	if svcacct.IsPosix() {
