@@ -1,9 +1,11 @@
 package config
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/mrled/ldapenforcer/internal/model"
 	"github.com/spf13/pflag"
 )
 
@@ -387,4 +389,108 @@ func TestParseCommandString(t *testing.T) {
 // Helper function to create a test flag set
 func NewTestFlagSet() *pflag.FlagSet {
 	return pflag.NewFlagSet("test", pflag.ContinueOnError)
+}
+
+func TestMergeWithEnv(t *testing.T) {
+	// Save original environment variables
+	origVars := map[string]string{
+		"LDAPENFORCER_URI":                        os.Getenv("LDAPENFORCER_URI"),
+		"LDAPENFORCER_BIND_DN":                    os.Getenv("LDAPENFORCER_BIND_DN"),
+		"LDAPENFORCER_PASSWORD":                   os.Getenv("LDAPENFORCER_PASSWORD"),
+		"LDAPENFORCER_PASSWORD_FILE":              os.Getenv("LDAPENFORCER_PASSWORD_FILE"),
+		"LDAPENFORCER_PASSWORD_COMMAND":           os.Getenv("LDAPENFORCER_PASSWORD_COMMAND"),
+		"LDAPENFORCER_PASSWORD_COMMAND_VIA_SHELL": os.Getenv("LDAPENFORCER_PASSWORD_COMMAND_VIA_SHELL"),
+		"LDAPENFORCER_CA_CERT_FILE":               os.Getenv("LDAPENFORCER_CA_CERT_FILE"),
+		"LDAPENFORCER_LOG_LEVEL":                  os.Getenv("LDAPENFORCER_LOG_LEVEL"),
+		"LDAPENFORCER_LDAP_LOG_LEVEL":             os.Getenv("LDAPENFORCER_LDAP_LOG_LEVEL"),
+		"LDAPENFORCER_PEOPLE_BASE_DN":             os.Getenv("LDAPENFORCER_PEOPLE_BASE_DN"),
+		"LDAPENFORCER_SVCACCT_BASE_DN":            os.Getenv("LDAPENFORCER_SVCACCT_BASE_DN"),
+		"LDAPENFORCER_GROUP_BASE_DN":              os.Getenv("LDAPENFORCER_GROUP_BASE_DN"),
+		"LDAPENFORCER_MANAGED_OU":                 os.Getenv("LDAPENFORCER_MANAGED_OU"),
+		"LDAPENFORCER_INCLUDES":                   os.Getenv("LDAPENFORCER_INCLUDES"),
+	}
+
+	// Restore original environment after test
+	defer func() {
+		for k, v := range origVars {
+			if v == "" {
+				os.Unsetenv(k)
+			} else {
+				os.Setenv(k, v)
+			}
+		}
+	}()
+
+	// Set test environment variables
+	os.Setenv("LDAPENFORCER_URI", "ldap://envtest.com")
+	os.Setenv("LDAPENFORCER_BIND_DN", "cn=envuser,dc=example,dc=com")
+	os.Setenv("LDAPENFORCER_PASSWORD", "env_password")
+	os.Setenv("LDAPENFORCER_PASSWORD_COMMAND_VIA_SHELL", "true")
+	os.Setenv("LDAPENFORCER_CA_CERT_FILE", "/path/from/env/ca.crt")
+	os.Setenv("LDAPENFORCER_LOG_LEVEL", "INFO")
+	os.Setenv("LDAPENFORCER_LDAP_LOG_LEVEL", "DEBUG")
+	os.Setenv("LDAPENFORCER_PEOPLE_BASE_DN", "ou=people,dc=envtest,dc=com")
+	os.Setenv("LDAPENFORCER_SVCACCT_BASE_DN", "ou=svcaccts,dc=envtest,dc=com")
+	os.Setenv("LDAPENFORCER_GROUP_BASE_DN", "ou=groups,dc=envtest,dc=com")
+	os.Setenv("LDAPENFORCER_MANAGED_OU", "env-managed")
+	os.Setenv("LDAPENFORCER_INCLUDES", "env1.toml, env2.toml")
+
+	// Create a test config
+	config := &Config{}
+
+	// Initialize the config structure to avoid nil pointers
+	config.LDAPEnforcer.Person = make(map[string]*model.Person)
+	config.LDAPEnforcer.SvcAcct = make(map[string]*model.SvcAcct)
+	config.LDAPEnforcer.Group = make(map[string]*model.Group)
+	config.LDAPEnforcer.Includes = make([]string, 0)
+
+	// Load from environment
+	config.MergeWithEnv()
+
+	// Check values
+	if config.LDAPEnforcer.URI != "ldap://envtest.com" {
+		t.Errorf("Expected URI 'ldap://envtest.com', got '%s'", config.LDAPEnforcer.URI)
+	}
+	if config.LDAPEnforcer.BindDN != "cn=envuser,dc=example,dc=com" {
+		t.Errorf("Expected BindDN 'cn=envuser,dc=example,dc=com', got '%s'", config.LDAPEnforcer.BindDN)
+	}
+	if config.LDAPEnforcer.Password != "env_password" {
+		t.Errorf("Expected Password 'env_password', got '%s'", config.LDAPEnforcer.Password)
+	}
+	if !config.LDAPEnforcer.PasswordCommandViaShell {
+		t.Errorf("Expected PasswordCommandViaShell 'true', got '%v'", config.LDAPEnforcer.PasswordCommandViaShell)
+	}
+	if config.LDAPEnforcer.CACertFile != "/path/from/env/ca.crt" {
+		t.Errorf("Expected CACertFile '/path/from/env/ca.crt', got '%s'", config.LDAPEnforcer.CACertFile)
+	}
+	if config.LDAPEnforcer.Logging.Level != "INFO" {
+		t.Errorf("Expected Logging.Level 'INFO', got '%s'", config.LDAPEnforcer.Logging.Level)
+	}
+	if config.LDAPEnforcer.Logging.LDAP.Level != "DEBUG" {
+		t.Errorf("Expected Logging.LDAP.Level 'DEBUG', got '%s'", config.LDAPEnforcer.Logging.LDAP.Level)
+	}
+	if config.LDAPEnforcer.PeopleBaseDN != "ou=people,dc=envtest,dc=com" {
+		t.Errorf("Expected PeopleBaseDN 'ou=people,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.PeopleBaseDN)
+	}
+	if config.LDAPEnforcer.SvcAcctBaseDN != "ou=svcaccts,dc=envtest,dc=com" {
+		t.Errorf("Expected SvcAcctBaseDN 'ou=svcaccts,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.SvcAcctBaseDN)
+	}
+	if config.LDAPEnforcer.GroupBaseDN != "ou=groups,dc=envtest,dc=com" {
+		t.Errorf("Expected GroupBaseDN 'ou=groups,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.GroupBaseDN)
+	}
+	if config.LDAPEnforcer.ManagedOU != "env-managed" {
+		t.Errorf("Expected ManagedOU 'env-managed', got '%s'", config.LDAPEnforcer.ManagedOU)
+	}
+
+	// Check includes (should have been cleaned up from comma-separated string)
+	expectedIncludes := []string{"env1.toml", "env2.toml"}
+	if len(config.LDAPEnforcer.Includes) != len(expectedIncludes) {
+		t.Errorf("Expected %d includes, got %d", len(expectedIncludes), len(config.LDAPEnforcer.Includes))
+	} else {
+		for i, include := range config.LDAPEnforcer.Includes {
+			if include != expectedIncludes[i] {
+				t.Errorf("Expected include '%s', got '%s'", expectedIncludes[i], include)
+			}
+		}
+	}
 }

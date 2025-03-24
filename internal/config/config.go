@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -113,6 +114,9 @@ func LoadConfig(configFile string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Load configuration from environment variables, overriding settings from the config file
+	config.MergeWithEnv()
 
 	// Set defaults for the logging configuration
 	if config.LDAPEnforcer.Logging.Level == "" {
@@ -354,6 +358,66 @@ func (c *Config) GetPassword() (string, error) {
 	}
 
 	return "", nil
+}
+
+// MergeWithEnv loads configuration values from environment variables
+func (c *Config) MergeWithEnv() {
+	// Core LDAP connection settings
+	if val := os.Getenv("LDAPENFORCER_URI"); val != "" {
+		c.LDAPEnforcer.URI = val
+	}
+	if val := os.Getenv("LDAPENFORCER_BIND_DN"); val != "" {
+		c.LDAPEnforcer.BindDN = val
+	}
+	if val := os.Getenv("LDAPENFORCER_PASSWORD"); val != "" {
+		c.LDAPEnforcer.Password = val
+	}
+	if val := os.Getenv("LDAPENFORCER_PASSWORD_FILE"); val != "" {
+		c.LDAPEnforcer.PasswordFile = val
+	}
+	if val := os.Getenv("LDAPENFORCER_PASSWORD_COMMAND"); val != "" {
+		c.LDAPEnforcer.PasswordCommand = val
+	}
+	if val := os.Getenv("LDAPENFORCER_PASSWORD_COMMAND_VIA_SHELL"); val != "" {
+		boolValue, err := strconv.ParseBool(val)
+		if err == nil && boolValue {
+			c.LDAPEnforcer.PasswordCommandViaShell = true
+		}
+	}
+	if val := os.Getenv("LDAPENFORCER_CA_CERT_FILE"); val != "" {
+		c.LDAPEnforcer.CACertFile = val
+	}
+
+	// Logging configuration
+	if val := os.Getenv("LDAPENFORCER_LOG_LEVEL"); val != "" {
+		c.LDAPEnforcer.Logging.Level = val
+	}
+	if val := os.Getenv("LDAPENFORCER_LDAP_LOG_LEVEL"); val != "" {
+		c.LDAPEnforcer.Logging.LDAP.Level = val
+	}
+
+	// Directory structure
+	if val := os.Getenv("LDAPENFORCER_PEOPLE_BASE_DN"); val != "" {
+		c.LDAPEnforcer.PeopleBaseDN = val
+	}
+	if val := os.Getenv("LDAPENFORCER_SVCACCT_BASE_DN"); val != "" {
+		c.LDAPEnforcer.SvcAcctBaseDN = val
+	}
+	if val := os.Getenv("LDAPENFORCER_GROUP_BASE_DN"); val != "" {
+		c.LDAPEnforcer.GroupBaseDN = val
+	}
+	if val := os.Getenv("LDAPENFORCER_MANAGED_OU"); val != "" {
+		c.LDAPEnforcer.ManagedOU = val
+	}
+
+	// Includes - process as comma-separated list
+	if val := os.Getenv("LDAPENFORCER_INCLUDES"); val != "" {
+		includes := strings.Split(val, ",")
+		for i := range includes {
+			includes[i] = strings.TrimSpace(includes[i])
+		}
+		c.LDAPEnforcer.Includes = append(c.LDAPEnforcer.Includes, includes...)
+	}
 }
 
 // AddFlags adds the configuration flags to the provided flag set

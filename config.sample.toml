@@ -27,6 +27,17 @@ password = "admin_password"
 # Path to CA certificate file for LDAPS connections (only needed for LDAPS)
 # ca_cert_file = "/path/to/ca.crt"  # Absolute path
 # ca_cert_file = "certs/ca.crt"  # Relative to config file
+#
+# NOTE: All configuration settings can also be set via environment variables.
+# Environment variable names are in the format LDAPENFORCER_<SETTING_NAME>, 
+# for example:
+#   - LDAPENFORCER_URI
+#   - LDAPENFORCER_BIND_DN
+#   - LDAPENFORCER_PASSWORD
+#   - LDAPENFORCER_LOG_LEVEL
+#   - LDAPENFORCER_LDAP_LOG_LEVEL 
+#   - LDAPENFORCER_PEOPLE_BASE_DN
+# Environment variables take precedence over config file settings.
 
 # Logging configuration
 [ldapenforcer.logging]

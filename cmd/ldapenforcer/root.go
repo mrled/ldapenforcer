@@ -6,6 +6,7 @@ import (
 
 	"github.com/mrled/ldapenforcer/internal/config"
 	"github.com/mrled/ldapenforcer/internal/logging"
+	"github.com/mrled/ldapenforcer/internal/model"
 	"github.com/spf13/cobra"
 )
 
@@ -36,11 +37,20 @@ enforcing policies on LDAP directories.`,
 				return fmt.Errorf("error loading config file: %w", err)
 			}
 
-			// Merge command line flags with config
+			// Merge command line flags with config (flags take precedence)
 			cfg.MergeWithFlags(cmd.Flags())
 		} else {
-			// If no config file, create an empty config with just flags
-			cfg = &config.Config{}
+			// If no config file, create an empty config and load from environment and flags
+			cfg = createEmptyConfig()
+
+			// Set default log levels
+			cfg.LDAPEnforcer.Logging.Level = "ERROR"
+			cfg.LDAPEnforcer.Logging.LDAP.Level = "ERROR"
+
+			// Load from environment variables
+			cfg.MergeWithEnv()
+
+			// Merge command line flags (flags take precedence over env vars)
 			cfg.MergeWithFlags(cmd.Flags())
 		}
 
@@ -83,6 +93,24 @@ enforcing policies on LDAP directories.`,
 
 		return nil
 	},
+}
+
+// createEmptyConfig creates a new empty config with initialized maps
+func createEmptyConfig() *config.Config {
+	// Create a new config with initialized maps
+	emptyConfig := &config.Config{
+		LDAPEnforcer: config.LDAPEnforcerConfig{
+			Person:   make(map[string]*model.Person),
+			SvcAcct:  make(map[string]*model.SvcAcct),
+			Group:    make(map[string]*model.Group),
+			Includes: make([]string, 0),
+			Logging: config.LoggingConfig{
+				LDAP: config.LDAPLoggingConfig{},
+			},
+		},
+	}
+
+	return emptyConfig
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
