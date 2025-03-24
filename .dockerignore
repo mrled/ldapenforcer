@@ -1,0 +1,23 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+ldapenforcer
+*.exe
+*.test
+*.prof
+
+# IDE folders
+.idea
+.vscode
+
+# Local development files
+todo.md
+*.local.*
+docs
+examples
+
+# Test data
+testdata
+**/testdata
