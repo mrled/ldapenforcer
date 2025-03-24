@@ -58,17 +58,14 @@ level = "ERROR"
 level = "ERROR"
 
 # Directory Structure
-# Base DN for people (required)
-people_base_dn = "ou=people,dc=example,dc=com"
+# Full OU for enforced people (required)
+enforced_people_ou = "ou=managed,ou=people,dc=example,dc=com"
 
-# Base DN for service accounts (required)
-svcacct_base_dn = "ou=svcaccts,dc=example,dc=com"
+# Full OU for enforced service accounts (required)
+enforced_svcacct_ou = "ou=managed,ou=svcaccts,dc=example,dc=com"
 
-# Base DN for groups (required)
-group_base_dn = "ou=groups,dc=example,dc=com"
-
-# Name of the OU indicating managed objects (required)
-managed_ou = "managed"
+# Full OU for enforced groups (required)
+enforced_group_ou = "ou=managed,ou=groups,dc=example,dc=com"
 
 # Include files - paths are relative to this config file's directory
 # unless they are absolute paths

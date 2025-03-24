@@ -5,10 +5,9 @@ bind_dn = "cn=admin,dc=example,dc=com"
 password = "admin_password"
 
 # Directory Structure
-people_base_dn = "ou=people,dc=example,dc=com"
-svcacct_base_dn = "ou=svcaccts,dc=example,dc=com"
-group_base_dn = "ou=groups,dc=example,dc=com"
-managed_ou = "managed"
+enforced_people_ou = "ou=managed,ou=people,dc=example,dc=com"
+enforced_svcacct_ou = "ou=managed,ou=svcaccts,dc=example,dc=com"
+enforced_group_ou = "ou=managed,ou=groups,dc=example,dc=com"
 
 # Includes - Processed at the end
 includes = ["includes/additional.toml"]

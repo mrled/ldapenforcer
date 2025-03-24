@@ -35,19 +35,16 @@ func TestLoadConfig(t *testing.T) {
 	if config.LDAPEnforcer.Logging.Level != "INFO" {
 		t.Errorf("Expected Logging.Level 'INFO', got '%s'", config.LDAPEnforcer.Logging.Level)
 	}
-	if config.LDAPEnforcer.PeopleBaseDN != "ou=people,dc=example,dc=com" {
-		t.Errorf("Expected PeopleBaseDN 'ou=people,dc=example,dc=com', got '%s'", config.LDAPEnforcer.PeopleBaseDN)
+	// Check values of enforced OUs
+	// EnforcedPeopleOU should be overridden by the includes
+	if config.LDAPEnforcer.EnforcedPeopleOU != "ou=managed-override,ou=people,dc=example,dc=com" {
+		t.Errorf("Expected EnforcedPeopleOU 'ou=managed-override,ou=people,dc=example,dc=com' from included file, got '%s'", config.LDAPEnforcer.EnforcedPeopleOU)
 	}
-	if config.LDAPEnforcer.SvcAcctBaseDN != "ou=svcaccts,dc=example,dc=com" {
-		t.Errorf("Expected SvcAcctBaseDN 'ou=svcaccts,dc=example,dc=com', got '%s'", config.LDAPEnforcer.SvcAcctBaseDN)
+	if config.LDAPEnforcer.EnforcedSvcAcctOU != "ou=managed,ou=svcaccts,dc=example,dc=com" {
+		t.Errorf("Expected EnforcedSvcAcctOU 'ou=managed,ou=svcaccts,dc=example,dc=com', got '%s'", config.LDAPEnforcer.EnforcedSvcAcctOU)
 	}
-	if config.LDAPEnforcer.GroupBaseDN != "ou=groups,dc=example,dc=com" {
-		t.Errorf("Expected GroupBaseDN 'ou=groups,dc=example,dc=com', got '%s'", config.LDAPEnforcer.GroupBaseDN)
-	}
-
-	// Check that includes were processed
-	if config.LDAPEnforcer.ManagedOU != "managed-override" {
-		t.Errorf("Expected ManagedOU 'managed-override' from included file, got '%s'", config.LDAPEnforcer.ManagedOU)
+	if config.LDAPEnforcer.EnforcedGroupOU != "ou=managed,ou=groups,dc=example,dc=com" {
+		t.Errorf("Expected EnforcedGroupOU 'ou=managed,ou=groups,dc=example,dc=com', got '%s'", config.LDAPEnforcer.EnforcedGroupOU)
 	}
 }
 
@@ -170,9 +167,9 @@ func TestMergeWithFlags(t *testing.T) {
 	flags.Set("password-command", "echo password")
 	flags.Set("password-command-via-shell", "true")
 	flags.Set("ca-cert-file", "/path/to/ca.crt")
-	flags.Set("people-base-dn", "ou=people,dc=flagtest,dc=com")
-	flags.Set("svcacct-base-dn", "ou=svcaccts,dc=flagtest,dc=com")
-	flags.Set("managed-ou", "flag-managed")
+	flags.Set("enforced-people-ou", "ou=flag-managed,ou=people,dc=flagtest,dc=com")
+	flags.Set("enforced-svcacct-ou", "ou=flag-managed,ou=svcaccts,dc=flagtest,dc=com")
+	flags.Set("enforced-group-ou", "ou=flag-managed,ou=groups,dc=flagtest,dc=com")
 
 	// Merge with config
 	config.MergeWithFlags(flags)
@@ -193,14 +190,14 @@ func TestMergeWithFlags(t *testing.T) {
 	if config.LDAPEnforcer.CACertFile != "/path/to/ca.crt" {
 		t.Errorf("Expected CACertFile '/path/to/ca.crt', got '%s'", config.LDAPEnforcer.CACertFile)
 	}
-	if config.LDAPEnforcer.PeopleBaseDN != "ou=people,dc=flagtest,dc=com" {
-		t.Errorf("Expected PeopleBaseDN 'ou=people,dc=flagtest,dc=com', got '%s'", config.LDAPEnforcer.PeopleBaseDN)
+	if config.LDAPEnforcer.EnforcedPeopleOU != "ou=flag-managed,ou=people,dc=flagtest,dc=com" {
+		t.Errorf("Expected EnforcedPeopleOU 'ou=flag-managed,ou=people,dc=flagtest,dc=com', got '%s'", config.LDAPEnforcer.EnforcedPeopleOU)
 	}
-	if config.LDAPEnforcer.SvcAcctBaseDN != "ou=svcaccts,dc=flagtest,dc=com" {
-		t.Errorf("Expected SvcAcctBaseDN 'ou=svcaccts,dc=flagtest,dc=com', got '%s'", config.LDAPEnforcer.SvcAcctBaseDN)
+	if config.LDAPEnforcer.EnforcedSvcAcctOU != "ou=flag-managed,ou=svcaccts,dc=flagtest,dc=com" {
+		t.Errorf("Expected EnforcedSvcAcctOU 'ou=flag-managed,ou=svcaccts,dc=flagtest,dc=com', got '%s'", config.LDAPEnforcer.EnforcedSvcAcctOU)
 	}
-	if config.LDAPEnforcer.ManagedOU != "flag-managed" {
-		t.Errorf("Expected ManagedOU 'flag-managed', got '%s'", config.LDAPEnforcer.ManagedOU)
+	if config.LDAPEnforcer.EnforcedGroupOU != "ou=flag-managed,ou=groups,dc=flagtest,dc=com" {
+		t.Errorf("Expected EnforcedGroupOU 'ou=flag-managed,ou=groups,dc=flagtest,dc=com', got '%s'", config.LDAPEnforcer.EnforcedGroupOU)
 	}
 }
 
@@ -214,13 +211,12 @@ func TestValidate(t *testing.T) {
 			name: "Valid config",
 			config: &Config{
 				LDAPEnforcer: LDAPEnforcerConfig{
-					URI:           "ldap://example.com",
-					BindDN:        "cn=admin,dc=example,dc=com",
-					Password:      "password",
-					PeopleBaseDN:  "ou=people,dc=example,dc=com",
-					SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
-					GroupBaseDN:   "ou=groups,dc=example,dc=com",
-					ManagedOU:     "managed",
+					URI:               "ldap://example.com",
+					BindDN:            "cn=admin,dc=example,dc=com",
+					Password:          "password",
+					EnforcedPeopleOU:  "ou=managed,ou=people,dc=example,dc=com",
+					EnforcedSvcAcctOU: "ou=managed,ou=svcaccts,dc=example,dc=com",
+					EnforcedGroupOU:   "ou=managed,ou=groups,dc=example,dc=com",
 				},
 			},
 			expectError: false,
@@ -229,12 +225,11 @@ func TestValidate(t *testing.T) {
 			name: "Missing URI",
 			config: &Config{
 				LDAPEnforcer: LDAPEnforcerConfig{
-					BindDN:        "cn=admin,dc=example,dc=com",
-					Password:      "password",
-					PeopleBaseDN:  "ou=people,dc=example,dc=com",
-					SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
-					GroupBaseDN:   "ou=groups,dc=example,dc=com",
-					ManagedOU:     "managed",
+					BindDN:            "cn=admin,dc=example,dc=com",
+					Password:          "password",
+					EnforcedPeopleOU:  "ou=managed,ou=people,dc=example,dc=com",
+					EnforcedSvcAcctOU: "ou=managed,ou=svcaccts,dc=example,dc=com",
+					EnforcedGroupOU:   "ou=managed,ou=groups,dc=example,dc=com",
 				},
 			},
 			expectError: true,
@@ -243,12 +238,11 @@ func TestValidate(t *testing.T) {
 			name: "Missing password, password file, and password command",
 			config: &Config{
 				LDAPEnforcer: LDAPEnforcerConfig{
-					URI:           "ldap://example.com",
-					BindDN:        "cn=admin,dc=example,dc=com",
-					PeopleBaseDN:  "ou=people,dc=example,dc=com",
-					SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
-					GroupBaseDN:   "ou=groups,dc=example,dc=com",
-					ManagedOU:     "managed",
+					URI:               "ldap://example.com",
+					BindDN:            "cn=admin,dc=example,dc=com",
+					EnforcedPeopleOU:  "ou=managed,ou=people,dc=example,dc=com",
+					EnforcedSvcAcctOU: "ou=managed,ou=svcaccts,dc=example,dc=com",
+					EnforcedGroupOU:   "ou=managed,ou=groups,dc=example,dc=com",
 				},
 			},
 			expectError: true,
@@ -257,13 +251,12 @@ func TestValidate(t *testing.T) {
 			name: "With password file instead of password",
 			config: &Config{
 				LDAPEnforcer: LDAPEnforcerConfig{
-					URI:           "ldap://example.com",
-					BindDN:        "cn=admin,dc=example,dc=com",
-					PasswordFile:  "path/to/password.txt",
-					PeopleBaseDN:  "ou=people,dc=example,dc=com",
-					SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
-					GroupBaseDN:   "ou=groups,dc=example,dc=com",
-					ManagedOU:     "managed",
+					URI:               "ldap://example.com",
+					BindDN:            "cn=admin,dc=example,dc=com",
+					PasswordFile:      "path/to/password.txt",
+					EnforcedPeopleOU:  "ou=managed,ou=people,dc=example,dc=com",
+					EnforcedSvcAcctOU: "ou=managed,ou=svcaccts,dc=example,dc=com",
+					EnforcedGroupOU:   "ou=managed,ou=groups,dc=example,dc=com",
 				},
 			},
 			expectError: false,
@@ -272,13 +265,12 @@ func TestValidate(t *testing.T) {
 			name: "With password command instead of password",
 			config: &Config{
 				LDAPEnforcer: LDAPEnforcerConfig{
-					URI:             "ldap://example.com",
-					BindDN:          "cn=admin,dc=example,dc=com",
-					PasswordCommand: "echo password",
-					PeopleBaseDN:    "ou=people,dc=example,dc=com",
-					SvcAcctBaseDN:   "ou=svcaccts,dc=example,dc=com",
-					GroupBaseDN:     "ou=groups,dc=example,dc=com",
-					ManagedOU:       "managed",
+					URI:               "ldap://example.com",
+					BindDN:            "cn=admin,dc=example,dc=com",
+					PasswordCommand:   "echo password",
+					EnforcedPeopleOU:  "ou=managed,ou=people,dc=example,dc=com",
+					EnforcedSvcAcctOU: "ou=managed,ou=svcaccts,dc=example,dc=com",
+					EnforcedGroupOU:   "ou=managed,ou=groups,dc=example,dc=com",
 				},
 			},
 			expectError: false,
@@ -291,10 +283,9 @@ func TestValidate(t *testing.T) {
 					BindDN:                  "cn=admin,dc=example,dc=com",
 					PasswordCommand:         "echo password",
 					PasswordCommandViaShell: true,
-					PeopleBaseDN:            "ou=people,dc=example,dc=com",
-					SvcAcctBaseDN:           "ou=svcaccts,dc=example,dc=com",
-					GroupBaseDN:             "ou=groups,dc=example,dc=com",
-					ManagedOU:               "managed",
+					EnforcedPeopleOU:        "ou=managed,ou=people,dc=example,dc=com",
+					EnforcedSvcAcctOU:       "ou=managed,ou=svcaccts,dc=example,dc=com",
+					EnforcedGroupOU:         "ou=managed,ou=groups,dc=example,dc=com",
 				},
 			},
 			expectError: false,
@@ -403,10 +394,9 @@ func TestMergeWithEnv(t *testing.T) {
 		"LDAPENFORCER_CA_CERT_FILE":               os.Getenv("LDAPENFORCER_CA_CERT_FILE"),
 		"LDAPENFORCER_LOG_LEVEL":                  os.Getenv("LDAPENFORCER_LOG_LEVEL"),
 		"LDAPENFORCER_LDAP_LOG_LEVEL":             os.Getenv("LDAPENFORCER_LDAP_LOG_LEVEL"),
-		"LDAPENFORCER_PEOPLE_BASE_DN":             os.Getenv("LDAPENFORCER_PEOPLE_BASE_DN"),
-		"LDAPENFORCER_SVCACCT_BASE_DN":            os.Getenv("LDAPENFORCER_SVCACCT_BASE_DN"),
-		"LDAPENFORCER_GROUP_BASE_DN":              os.Getenv("LDAPENFORCER_GROUP_BASE_DN"),
-		"LDAPENFORCER_MANAGED_OU":                 os.Getenv("LDAPENFORCER_MANAGED_OU"),
+		"LDAPENFORCER_ENFORCED_PEOPLE_OU":         os.Getenv("LDAPENFORCER_ENFORCED_PEOPLE_OU"),
+		"LDAPENFORCER_ENFORCED_SVCACCT_OU":        os.Getenv("LDAPENFORCER_ENFORCED_SVCACCT_OU"),
+		"LDAPENFORCER_ENFORCED_GROUP_OU":          os.Getenv("LDAPENFORCER_ENFORCED_GROUP_OU"),
 		"LDAPENFORCER_INCLUDES":                   os.Getenv("LDAPENFORCER_INCLUDES"),
 	}
 
@@ -429,10 +419,9 @@ func TestMergeWithEnv(t *testing.T) {
 	os.Setenv("LDAPENFORCER_CA_CERT_FILE", "/path/from/env/ca.crt")
 	os.Setenv("LDAPENFORCER_LOG_LEVEL", "INFO")
 	os.Setenv("LDAPENFORCER_LDAP_LOG_LEVEL", "DEBUG")
-	os.Setenv("LDAPENFORCER_PEOPLE_BASE_DN", "ou=people,dc=envtest,dc=com")
-	os.Setenv("LDAPENFORCER_SVCACCT_BASE_DN", "ou=svcaccts,dc=envtest,dc=com")
-	os.Setenv("LDAPENFORCER_GROUP_BASE_DN", "ou=groups,dc=envtest,dc=com")
-	os.Setenv("LDAPENFORCER_MANAGED_OU", "env-managed")
+	os.Setenv("LDAPENFORCER_ENFORCED_PEOPLE_OU", "ou=env-managed,ou=people,dc=envtest,dc=com")
+	os.Setenv("LDAPENFORCER_ENFORCED_SVCACCT_OU", "ou=env-managed,ou=svcaccts,dc=envtest,dc=com")
+	os.Setenv("LDAPENFORCER_ENFORCED_GROUP_OU", "ou=env-managed,ou=groups,dc=envtest,dc=com")
 	os.Setenv("LDAPENFORCER_INCLUDES", "env1.toml, env2.toml")
 
 	// Create a test config
@@ -469,17 +458,14 @@ func TestMergeWithEnv(t *testing.T) {
 	if config.LDAPEnforcer.Logging.LDAP.Level != "DEBUG" {
 		t.Errorf("Expected Logging.LDAP.Level 'DEBUG', got '%s'", config.LDAPEnforcer.Logging.LDAP.Level)
 	}
-	if config.LDAPEnforcer.PeopleBaseDN != "ou=people,dc=envtest,dc=com" {
-		t.Errorf("Expected PeopleBaseDN 'ou=people,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.PeopleBaseDN)
+	if config.LDAPEnforcer.EnforcedPeopleOU != "ou=env-managed,ou=people,dc=envtest,dc=com" {
+		t.Errorf("Expected EnforcedPeopleOU 'ou=env-managed,ou=people,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.EnforcedPeopleOU)
 	}
-	if config.LDAPEnforcer.SvcAcctBaseDN != "ou=svcaccts,dc=envtest,dc=com" {
-		t.Errorf("Expected SvcAcctBaseDN 'ou=svcaccts,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.SvcAcctBaseDN)
+	if config.LDAPEnforcer.EnforcedSvcAcctOU != "ou=env-managed,ou=svcaccts,dc=envtest,dc=com" {
+		t.Errorf("Expected EnforcedSvcAcctOU 'ou=env-managed,ou=svcaccts,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.EnforcedSvcAcctOU)
 	}
-	if config.LDAPEnforcer.GroupBaseDN != "ou=groups,dc=envtest,dc=com" {
-		t.Errorf("Expected GroupBaseDN 'ou=groups,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.GroupBaseDN)
-	}
-	if config.LDAPEnforcer.ManagedOU != "env-managed" {
-		t.Errorf("Expected ManagedOU 'env-managed', got '%s'", config.LDAPEnforcer.ManagedOU)
+	if config.LDAPEnforcer.EnforcedGroupOU != "ou=env-managed,ou=groups,dc=envtest,dc=com" {
+		t.Errorf("Expected EnforcedGroupOU 'ou=env-managed,ou=groups,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.EnforcedGroupOU)
 	}
 
 	// Check includes (should have been cleaned up from comma-separated string)

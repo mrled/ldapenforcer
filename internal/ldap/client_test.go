@@ -42,10 +42,9 @@ func TestGetOUFromDN(t *testing.T) {
 func TestDNCreation(t *testing.T) {
 	testConfig := &config.Config{
 		LDAPEnforcer: config.LDAPEnforcerConfig{
-			PeopleBaseDN:  "ou=people,dc=example,dc=com",
-			SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
-			GroupBaseDN:   "ou=groups,dc=example,dc=com",
-			ManagedOU:     "managed",
+			EnforcedPeopleOU:  "ou=managed,ou=people,dc=example,dc=com",
+			EnforcedSvcAcctOU: "ou=managed,ou=svcaccts,dc=example,dc=com",
+			EnforcedGroupOU:   "ou=managed,ou=groups,dc=example,dc=com",
 		},
 	}
 

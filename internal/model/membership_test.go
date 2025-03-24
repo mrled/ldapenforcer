@@ -72,13 +72,12 @@ func TestGetGroupMembers(t *testing.T) {
 	}
 
 	// Directory structure
-	peopleBaseDN := "ou=people,dc=example,dc=com"
-	svcacctBaseDN := "ou=svcaccts,dc=example,dc=com"
-	groupBaseDN := "ou=groups,dc=example,dc=com"
-	managedOU := "enforced"
+	enforcedPeopleOU := "ou=enforced,ou=people,dc=example,dc=com"
+	enforcedSvcAcctOU := "ou=enforced,ou=svcaccts,dc=example,dc=com"
+	enforcedGroupOU := "ou=enforced,ou=groups,dc=example,dc=com"
 
 	// Test getting members of group1
-	group1Members, err := GetGroupMembers("group1", groups, people, svcaccts, peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU)
+	group1Members, err := GetGroupMembers("group1", groups, people, svcaccts, enforcedPeopleOU, enforcedSvcAcctOU, enforcedGroupOU)
 	if err != nil {
 		t.Fatalf("Error getting group1 members: %v", err)
 	}
@@ -87,7 +86,7 @@ func TestGetGroupMembers(t *testing.T) {
 	}
 
 	// Test getting members of the nested group
-	nestedMembers, err := GetGroupMembers("nestedgroup", groups, people, svcaccts, peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU)
+	nestedMembers, err := GetGroupMembers("nestedgroup", groups, people, svcaccts, enforcedPeopleOU, enforcedSvcAcctOU, enforcedGroupOU)
 	if err != nil {
 		t.Fatalf("Error getting nested group members: %v", err)
 	}
@@ -96,7 +95,7 @@ func TestGetGroupMembers(t *testing.T) {
 	}
 
 	// Test cyclic group references (should not cause infinite recursion)
-	cyclicMembers, err := GetGroupMembers("cyclicgroup1", groups, people, svcaccts, peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU)
+	cyclicMembers, err := GetGroupMembers("cyclicgroup1", groups, people, svcaccts, enforcedPeopleOU, enforcedSvcAcctOU, enforcedGroupOU)
 	if err != nil {
 		t.Fatalf("Error getting cyclic group members: %v", err)
 	}

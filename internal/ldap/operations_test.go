@@ -156,11 +156,10 @@ func TestGetGroupAttributes(t *testing.T) {
 	// Create a test configuration
 	testConfig := &config.Config{
 		LDAPEnforcer: config.LDAPEnforcerConfig{
-			BindDN:        "cn=admin,dc=example,dc=com",
-			PeopleBaseDN:  "ou=people,dc=example,dc=com",
-			SvcAcctBaseDN: "ou=svcaccts,dc=example,dc=com",
-			GroupBaseDN:   "ou=groups,dc=example,dc=com",
-			ManagedOU:     "managed",
+			BindDN:            "cn=admin,dc=example,dc=com",
+			EnforcedPeopleOU:  "ou=managed,ou=people,dc=example,dc=com",
+			EnforcedSvcAcctOU: "ou=managed,ou=svcaccts,dc=example,dc=com",
+			EnforcedGroupOU:   "ou=managed,ou=groups,dc=example,dc=com",
 			Person: map[string]*model.Person{
 				"john": {CN: "John Doe"},
 				"jane": {CN: "Jane Smith"},

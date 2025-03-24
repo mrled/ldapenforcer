@@ -50,17 +50,14 @@ type LDAPEnforcerConfig struct {
 	// Logging configuration
 	Logging LoggingConfig `toml:"logging"`
 
-	// Base DN for people
-	PeopleBaseDN string `toml:"people_base_dn"`
+	// Full OU for enforced people
+	EnforcedPeopleOU string `toml:"enforced_people_ou"`
 
-	// Base DN for service accounts
-	SvcAcctBaseDN string `toml:"svcacct_base_dn"`
+	// Full OU for enforced service accounts
+	EnforcedSvcAcctOU string `toml:"enforced_svcacct_ou"`
 
-	// Base DN for groups
-	GroupBaseDN string `toml:"group_base_dn"`
-
-	// Name of the OU indicating managed objects
-	ManagedOU string `toml:"managed_ou"`
+	// Full OU for enforced groups
+	EnforcedGroupOU string `toml:"enforced_group_ou"`
 
 	// List of config files to include
 	Includes []string `toml:"includes"`
@@ -212,17 +209,14 @@ func (c *Config) merge(other *Config) {
 	if other.LDAPEnforcer.Logging.LDAP.Level != "" {
 		c.LDAPEnforcer.Logging.LDAP.Level = other.LDAPEnforcer.Logging.LDAP.Level
 	}
-	if other.LDAPEnforcer.PeopleBaseDN != "" {
-		c.LDAPEnforcer.PeopleBaseDN = other.LDAPEnforcer.PeopleBaseDN
+	if other.LDAPEnforcer.EnforcedPeopleOU != "" {
+		c.LDAPEnforcer.EnforcedPeopleOU = other.LDAPEnforcer.EnforcedPeopleOU
 	}
-	if other.LDAPEnforcer.SvcAcctBaseDN != "" {
-		c.LDAPEnforcer.SvcAcctBaseDN = other.LDAPEnforcer.SvcAcctBaseDN
+	if other.LDAPEnforcer.EnforcedSvcAcctOU != "" {
+		c.LDAPEnforcer.EnforcedSvcAcctOU = other.LDAPEnforcer.EnforcedSvcAcctOU
 	}
-	if other.LDAPEnforcer.GroupBaseDN != "" {
-		c.LDAPEnforcer.GroupBaseDN = other.LDAPEnforcer.GroupBaseDN
-	}
-	if other.LDAPEnforcer.ManagedOU != "" {
-		c.LDAPEnforcer.ManagedOU = other.LDAPEnforcer.ManagedOU
+	if other.LDAPEnforcer.EnforcedGroupOU != "" {
+		c.LDAPEnforcer.EnforcedGroupOU = other.LDAPEnforcer.EnforcedGroupOU
 	}
 
 	// Make sure we also append any includes
@@ -397,17 +391,14 @@ func (c *Config) MergeWithEnv() {
 	}
 
 	// Directory structure
-	if val := os.Getenv("LDAPENFORCER_PEOPLE_BASE_DN"); val != "" {
-		c.LDAPEnforcer.PeopleBaseDN = val
+	if val := os.Getenv("LDAPENFORCER_ENFORCED_PEOPLE_OU"); val != "" {
+		c.LDAPEnforcer.EnforcedPeopleOU = val
 	}
-	if val := os.Getenv("LDAPENFORCER_SVCACCT_BASE_DN"); val != "" {
-		c.LDAPEnforcer.SvcAcctBaseDN = val
+	if val := os.Getenv("LDAPENFORCER_ENFORCED_SVCACCT_OU"); val != "" {
+		c.LDAPEnforcer.EnforcedSvcAcctOU = val
 	}
-	if val := os.Getenv("LDAPENFORCER_GROUP_BASE_DN"); val != "" {
-		c.LDAPEnforcer.GroupBaseDN = val
-	}
-	if val := os.Getenv("LDAPENFORCER_MANAGED_OU"); val != "" {
-		c.LDAPEnforcer.ManagedOU = val
+	if val := os.Getenv("LDAPENFORCER_ENFORCED_GROUP_OU"); val != "" {
+		c.LDAPEnforcer.EnforcedGroupOU = val
 	}
 
 	// Includes - process as comma-separated list
@@ -432,10 +423,9 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("ca-cert-file", "", "Path to CA certificate file for LDAPS")
 	flags.String("log-level", "ERROR", "Main log level (ERROR, WARN, INFO, DEBUG, TRACE)")
 	flags.String("ldap-log-level", "ERROR", "LDAP-specific log level (ERROR, WARN, INFO, DEBUG, TRACE)")
-	flags.String("people-base-dn", "", "Base DN for people")
-	flags.String("svcacct-base-dn", "", "Base DN for service accounts")
-	flags.String("group-base-dn", "", "Base DN for groups")
-	flags.String("managed-ou", "", "Name of the OU indicating managed objects")
+	flags.String("enforced-people-ou", "", "Full OU for enforced people")
+	flags.String("enforced-svcacct-ou", "", "Full OU for enforced service accounts")
+	flags.String("enforced-group-ou", "", "Full OU for enforced groups")
 }
 
 // MergeWithFlags merges command line flag values into the config
@@ -467,17 +457,14 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	if ldapLogLevel, _ := flags.GetString("ldap-log-level"); ldapLogLevel != "" {
 		c.LDAPEnforcer.Logging.LDAP.Level = ldapLogLevel
 	}
-	if peopleBaseDN, _ := flags.GetString("people-base-dn"); peopleBaseDN != "" {
-		c.LDAPEnforcer.PeopleBaseDN = peopleBaseDN
+	if enforcedPeopleOU, _ := flags.GetString("enforced-people-ou"); enforcedPeopleOU != "" {
+		c.LDAPEnforcer.EnforcedPeopleOU = enforcedPeopleOU
 	}
-	if svcAcctBaseDN, _ := flags.GetString("svcacct-base-dn"); svcAcctBaseDN != "" {
-		c.LDAPEnforcer.SvcAcctBaseDN = svcAcctBaseDN
+	if enforcedSvcAcctOU, _ := flags.GetString("enforced-svcacct-ou"); enforcedSvcAcctOU != "" {
+		c.LDAPEnforcer.EnforcedSvcAcctOU = enforcedSvcAcctOU
 	}
-	if groupBaseDN, _ := flags.GetString("group-base-dn"); groupBaseDN != "" {
-		c.LDAPEnforcer.GroupBaseDN = groupBaseDN
-	}
-	if managedOU, _ := flags.GetString("managed-ou"); managedOU != "" {
-		c.LDAPEnforcer.ManagedOU = managedOU
+	if enforcedGroupOU, _ := flags.GetString("enforced-group-ou"); enforcedGroupOU != "" {
+		c.LDAPEnforcer.EnforcedGroupOU = enforcedGroupOU
 	}
 }
 
@@ -497,17 +484,14 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("one of password, password_file, or password_command must be provided")
 	}
 
-	if c.LDAPEnforcer.PeopleBaseDN == "" {
-		return fmt.Errorf("people base DN is required")
+	if c.LDAPEnforcer.EnforcedPeopleOU == "" {
+		return fmt.Errorf("enforced people OU is required")
 	}
-	if c.LDAPEnforcer.SvcAcctBaseDN == "" {
-		return fmt.Errorf("service account base DN is required")
+	if c.LDAPEnforcer.EnforcedSvcAcctOU == "" {
+		return fmt.Errorf("enforced service account OU is required")
 	}
-	if c.LDAPEnforcer.GroupBaseDN == "" {
-		return fmt.Errorf("group base DN is required")
-	}
-	if c.LDAPEnforcer.ManagedOU == "" {
-		return fmt.Errorf("managed OU is required")
+	if c.LDAPEnforcer.EnforcedGroupOU == "" {
+		return fmt.Errorf("enforced group OU is required")
 	}
 
 	return nil

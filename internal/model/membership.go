@@ -17,7 +17,7 @@ type Member struct {
 
 // GetGroupMembers returns all members of a group, including members of nested groups
 func GetGroupMembers(groupname string, groups map[string]*Group, people map[string]*Person, svcaccts map[string]*SvcAcct,
-	peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU string) ([]*Member, error) {
+	enforcedPeopleOU, enforcedSvcAcctOU, enforcedGroupOU string) ([]*Member, error) {
 
 	// Get the group
 	group, ok := groups[groupname]
@@ -39,7 +39,7 @@ func GetGroupMembers(groupname string, groups map[string]*Group, people map[stri
 		}
 
 		members = append(members, &Member{
-			DN:      createPersonDN(uid, peopleBaseDN, managedOU),
+			DN:      createPersonDN(uid, enforcedPeopleOU),
 			Type:    "person",
 			UID:     uid,
 			IsPosix: person.IsPosix(),
@@ -54,7 +54,7 @@ func GetGroupMembers(groupname string, groups map[string]*Group, people map[stri
 		}
 
 		members = append(members, &Member{
-			DN:      createSvcAcctDN(uid, svcacctBaseDN, managedOU),
+			DN:      createSvcAcctDN(uid, enforcedSvcAcctOU),
 			Type:    "svcacct",
 			UID:     uid,
 			IsPosix: svcacct.IsPosix(),
@@ -74,10 +74,9 @@ func GetGroupMembers(groupname string, groups map[string]*Group, people map[stri
 			groups,
 			people,
 			svcaccts,
-			peopleBaseDN,
-			svcacctBaseDN,
-			groupBaseDN,
-			managedOU,
+			enforcedPeopleOU,
+			enforcedSvcAcctOU,
+			enforcedGroupOU,
 			processedGroups,
 		)
 		if err != nil {
@@ -93,7 +92,7 @@ func GetGroupMembers(groupname string, groups map[string]*Group, people map[stri
 
 // getNestedGroupMembers is a recursive helper function for GetGroupMembers
 func getNestedGroupMembers(groupname string, groups map[string]*Group, people map[string]*Person, svcaccts map[string]*SvcAcct,
-	peopleBaseDN, svcacctBaseDN, groupBaseDN, managedOU string, processedGroups map[string]bool) ([]*Member, error) {
+	enforcedPeopleOU, enforcedSvcAcctOU, enforcedGroupOU string, processedGroups map[string]bool) ([]*Member, error) {
 
 	// Get the group
 	group, ok := groups[groupname]
@@ -115,7 +114,7 @@ func getNestedGroupMembers(groupname string, groups map[string]*Group, people ma
 		}
 
 		members = append(members, &Member{
-			DN:      createPersonDN(uid, peopleBaseDN, managedOU),
+			DN:      createPersonDN(uid, enforcedPeopleOU),
 			Type:    "person",
 			UID:     uid,
 			IsPosix: person.IsPosix(),
@@ -130,7 +129,7 @@ func getNestedGroupMembers(groupname string, groups map[string]*Group, people ma
 		}
 
 		members = append(members, &Member{
-			DN:      createSvcAcctDN(uid, svcacctBaseDN, managedOU),
+			DN:      createSvcAcctDN(uid, enforcedSvcAcctOU),
 			Type:    "svcacct",
 			UID:     uid,
 			IsPosix: svcacct.IsPosix(),
@@ -149,10 +148,9 @@ func getNestedGroupMembers(groupname string, groups map[string]*Group, people ma
 			groups,
 			people,
 			svcaccts,
-			peopleBaseDN,
-			svcacctBaseDN,
-			groupBaseDN,
-			managedOU,
+			enforcedPeopleOU,
+			enforcedSvcAcctOU,
+			enforcedGroupOU,
 			processedGroups,
 		)
 		if err != nil {
@@ -167,14 +165,14 @@ func getNestedGroupMembers(groupname string, groups map[string]*Group, people ma
 }
 
 // Helper functions to create DNs
-func createPersonDN(uid, peopleBaseDN, managedOU string) string {
-	return "uid=" + uid + ",ou=" + managedOU + "," + peopleBaseDN
+func createPersonDN(uid, enforcedPeopleOU string) string {
+	return "uid=" + uid + "," + enforcedPeopleOU
 }
 
-func createSvcAcctDN(uid, svcacctBaseDN, managedOU string) string {
-	return "uid=" + uid + ",ou=" + managedOU + "," + svcacctBaseDN
+func createSvcAcctDN(uid, enforcedSvcAcctOU string) string {
+	return "uid=" + uid + "," + enforcedSvcAcctOU
 }
 
-func createGroupDN(groupname, groupBaseDN, managedOU string) string {
-	return "cn=" + groupname + ",ou=" + managedOU + "," + groupBaseDN
+func createGroupDN(groupname, enforcedGroupOU string) string {
+	return "cn=" + groupname + "," + enforcedGroupOU
 }

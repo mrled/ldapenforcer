@@ -11,26 +11,23 @@ import (
 
 // PersonToDN converts a person UID to a DN
 func (c *Client) PersonToDN(uid string) string {
-	return fmt.Sprintf("uid=%s,ou=%s,%s",
+	return fmt.Sprintf("uid=%s,%s",
 		ldap.EscapeFilter(uid),
-		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
-		c.config.LDAPEnforcer.PeopleBaseDN)
+		c.config.LDAPEnforcer.EnforcedPeopleOU)
 }
 
 // SvcAcctToDN converts a service account UID to a DN
 func (c *Client) SvcAcctToDN(uid string) string {
-	return fmt.Sprintf("uid=%s,ou=%s,%s",
+	return fmt.Sprintf("uid=%s,%s",
 		ldap.EscapeFilter(uid),
-		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
-		c.config.LDAPEnforcer.SvcAcctBaseDN)
+		c.config.LDAPEnforcer.EnforcedSvcAcctOU)
 }
 
 // GroupToDN converts a group name to a DN
 func (c *Client) GroupToDN(groupname string) string {
-	return fmt.Sprintf("cn=%s,ou=%s,%s",
+	return fmt.Sprintf("cn=%s,%s",
 		ldap.EscapeFilter(groupname),
-		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
-		c.config.LDAPEnforcer.GroupBaseDN)
+		c.config.LDAPEnforcer.EnforcedGroupOU)
 }
 
 // GetPersonAttributes converts a Person to LDAP attributes
@@ -133,10 +130,9 @@ func (c *Client) GetGroupAttributes(groupname string, group *model.Group) (map[s
 		c.config.LDAPEnforcer.Group,
 		c.config.LDAPEnforcer.Person,
 		c.config.LDAPEnforcer.SvcAcct,
-		c.config.LDAPEnforcer.PeopleBaseDN,
-		c.config.LDAPEnforcer.SvcAcctBaseDN,
-		c.config.LDAPEnforcer.GroupBaseDN,
-		c.config.LDAPEnforcer.ManagedOU,
+		c.config.LDAPEnforcer.EnforcedPeopleOU,
+		c.config.LDAPEnforcer.EnforcedSvcAcctOU,
+		c.config.LDAPEnforcer.EnforcedGroupOU,
 	)
 	if err != nil {
 		return nil, err
@@ -167,28 +163,19 @@ func (c *Client) GetGroupAttributes(groupname string, group *model.Group) (map[s
 // EnsureManagedOUsExist ensures that all required OUs for managed objects exist
 func (c *Client) EnsureManagedOUsExist() error {
 	// Ensure people OU exists
-	peopleOU := fmt.Sprintf("ou=%s,%s",
-		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
-		c.config.LDAPEnforcer.PeopleBaseDN)
-	err := c.EnsureOUExists(peopleOU)
+	err := c.EnsureOUExists(c.config.LDAPEnforcer.EnforcedPeopleOU)
 	if err != nil {
 		return fmt.Errorf("failed to ensure people OU exists: %w", err)
 	}
 
 	// Ensure service account OU exists
-	svcacctOU := fmt.Sprintf("ou=%s,%s",
-		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
-		c.config.LDAPEnforcer.SvcAcctBaseDN)
-	err = c.EnsureOUExists(svcacctOU)
+	err = c.EnsureOUExists(c.config.LDAPEnforcer.EnforcedSvcAcctOU)
 	if err != nil {
 		return fmt.Errorf("failed to ensure service account OU exists: %w", err)
 	}
 
 	// Ensure group OU exists
-	groupOU := fmt.Sprintf("ou=%s,%s",
-		ldap.EscapeFilter(c.config.LDAPEnforcer.ManagedOU),
-		c.config.LDAPEnforcer.GroupBaseDN)
-	err = c.EnsureOUExists(groupOU)
+	err = c.EnsureOUExists(c.config.LDAPEnforcer.EnforcedGroupOU)
 	if err != nil {
 		return fmt.Errorf("failed to ensure group OU exists: %w", err)
 	}

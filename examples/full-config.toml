@@ -50,10 +50,9 @@ level = "ERROR"
 level = "ERROR"
 
 # Directory Structure
-people_base_dn = "ou=people,dc=example,dc=com"
-svcacct_base_dn = "ou=svcaccts,dc=example,dc=com"
-group_base_dn = "ou=groups,dc=example,dc=com"
-managed_ou = "enforced"
+enforced_people_ou = "ou=enforced,ou=people,dc=example,dc=com"
+enforced_svcacct_ou = "ou=enforced,ou=svcaccts,dc=example,dc=com"
+enforced_group_ou = "ou=enforced,ou=groups,dc=example,dc=com"
 
 # Person definitions
 [ldapenforcer.person.micahrl]
