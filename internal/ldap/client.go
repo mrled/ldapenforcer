@@ -30,7 +30,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	if isLDAPS && cfg.LDAPEnforcer.CACertFile != "" {
 		// Get the CA certificate file path, resolving it if needed
 		caCertPath := cfg.LDAPEnforcer.CACertFile
-		
+
 		// If it's a relative path, make it relative to the config file directory
 		if !filepath.IsAbs(caCertPath) {
 			configDir, err := getConfigDir()
@@ -38,7 +38,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 				caCertPath = filepath.Join(configDir, caCertPath)
 			}
 		}
-		
+
 		// Load CA certificate
 		tlsConfig, err := createTLSConfig(caCertPath)
 		if err != nil {

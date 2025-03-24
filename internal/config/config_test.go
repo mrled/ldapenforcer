@@ -53,7 +53,7 @@ func TestGetPassword(t *testing.T) {
 		t.Fatalf("Failed to get absolute path for testdata: %v", err)
 	}
 	configDir = absPath
-	
+
 	tests := []struct {
 		name           string
 		password       string
