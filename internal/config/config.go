@@ -1,8 +1,11 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -33,6 +36,12 @@ type LDAPEnforcerConfig struct {
 
 	// File containing the password for binding to LDAP
 	PasswordFile string `toml:"password_file"`
+
+	// Command to execute to retrieve the password
+	PasswordCommand string `toml:"password_command"`
+
+	// Execute password command via shell (using sh -c)
+	PasswordCommandViaShell bool `toml:"password_command_via_shell"`
 
 	// Path to CA certificate file for LDAPS
 	CACertFile string `toml:"ca_cert_file"`
@@ -142,6 +151,13 @@ func (c *Config) merge(other *Config) {
 	if other.LDAPEnforcer.PasswordFile != "" {
 		c.LDAPEnforcer.PasswordFile = other.LDAPEnforcer.PasswordFile
 	}
+	if other.LDAPEnforcer.PasswordCommand != "" {
+		c.LDAPEnforcer.PasswordCommand = other.LDAPEnforcer.PasswordCommand
+	}
+	// For boolean flags like PasswordCommandViaShell, only merge if true
+	if other.LDAPEnforcer.PasswordCommandViaShell {
+		c.LDAPEnforcer.PasswordCommandViaShell = true
+	}
 	if other.LDAPEnforcer.CACertFile != "" {
 		c.LDAPEnforcer.CACertFile = other.LDAPEnforcer.CACertFile
 	}
@@ -204,14 +220,14 @@ func GetConfigDir() (string, error) {
 	return configDir, nil
 }
 
-// GetPassword returns the LDAP password, loading it from the password file if specified
+// GetPassword returns the LDAP password, loading it from the password file or command if specified
 func (c *Config) GetPassword() (string, error) {
 	// If password is directly specified, use it
 	if c.LDAPEnforcer.Password != "" {
 		return c.LDAPEnforcer.Password, nil
 	}
 
-	// Otherwise, try to load from the password file
+	// Try to load from the password file
 	if c.LDAPEnforcer.PasswordFile != "" {
 		// Resolve password file path relative to config file if it's not absolute
 		passwordFilePath := c.LDAPEnforcer.PasswordFile
@@ -227,6 +243,66 @@ func (c *Config) GetPassword() (string, error) {
 		return strings.TrimSpace(string(data)), nil
 	}
 
+	// Try to execute the password command
+	if c.LDAPEnforcer.PasswordCommand != "" {
+		log.Printf("Executing password command to retrieve LDAP credentials")
+
+		// Use shell if explicitly requested via password_command_via_shell
+		if c.LDAPEnforcer.PasswordCommandViaShell {
+			log.Printf("Executing password command via shell (sh -c)")
+			// Use shell to execute the command
+			cmd := exec.Command("sh", "-c", c.LDAPEnforcer.PasswordCommand)
+
+			// Capture stdout
+			var stdout bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = os.Stderr
+
+			// Run the command
+			err := cmd.Run()
+			if err != nil {
+				log.Printf("Error executing shell password command: %v", err)
+				return "", fmt.Errorf("failed to execute shell password command: %w", err)
+			}
+
+			// Return the password from stdout, trimming whitespace
+			result := strings.TrimSpace(stdout.String())
+			log.Printf("Successfully retrieved password from command (length: %d)", len(result))
+			return result, nil
+		} else {
+			// Split the command and its arguments for direct execution
+			parts, err := parseCommandString(c.LDAPEnforcer.PasswordCommand)
+			if err != nil {
+				return "", fmt.Errorf("failed to parse password command: %w", err)
+			}
+
+			if len(parts) == 0 {
+				return "", fmt.Errorf("empty password command")
+			}
+
+			log.Printf("Executing direct command: %s", parts[0])
+			// Create the command
+			cmd := exec.Command(parts[0], parts[1:]...)
+
+			// Capture stdout
+			var stdout bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = os.Stderr
+
+			// Run the command
+			err = cmd.Run()
+			if err != nil {
+				log.Printf("Error executing password command: %v", err)
+				return "", fmt.Errorf("failed to execute password command: %w", err)
+			}
+
+			// Return the password from stdout, trimming whitespace
+			result := strings.TrimSpace(stdout.String())
+			log.Printf("Successfully retrieved password from command (length: %d)", len(result))
+			return result, nil
+		}
+	}
+
 	return "", nil
 }
 
@@ -237,6 +313,8 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("bind-dn", "", "DN for binding to LDAP")
 	flags.String("password", "", "Password for binding to LDAP")
 	flags.String("password-file", "", "File containing the password for binding to LDAP")
+	flags.String("password-command", "", "Command to execute to retrieve the password")
+	flags.Bool("password-command-via-shell", false, "Execute password command via shell (using sh -c)")
 	flags.String("ca-cert-file", "", "Path to CA certificate file for LDAPS")
 	flags.String("people-base-dn", "", "Base DN for people")
 	flags.String("svcacct-base-dn", "", "Base DN for service accounts")
@@ -257,6 +335,12 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	}
 	if passwordFile, _ := flags.GetString("password-file"); passwordFile != "" {
 		c.LDAPEnforcer.PasswordFile = passwordFile
+	}
+	if passwordCommand, _ := flags.GetString("password-command"); passwordCommand != "" {
+		c.LDAPEnforcer.PasswordCommand = passwordCommand
+	}
+	if viaShell, _ := flags.GetBool("password-command-via-shell"); viaShell {
+		c.LDAPEnforcer.PasswordCommandViaShell = true
 	}
 	if caCertFile, _ := flags.GetString("ca-cert-file"); caCertFile != "" {
 		c.LDAPEnforcer.CACertFile = caCertFile
@@ -284,9 +368,11 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("bind DN is required")
 	}
 
-	// Check if either password or password file is provided
-	if c.LDAPEnforcer.Password == "" && c.LDAPEnforcer.PasswordFile == "" {
-		return fmt.Errorf("either password or password file must be provided")
+	// Check if either password, password file, or password command is provided
+	if c.LDAPEnforcer.Password == "" &&
+		c.LDAPEnforcer.PasswordFile == "" &&
+		c.LDAPEnforcer.PasswordCommand == "" {
+		return fmt.Errorf("one of password, password_file, or password_command must be provided")
 	}
 
 	if c.LDAPEnforcer.PeopleBaseDN == "" {
@@ -303,4 +389,50 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+// parseCommandString parses a command string into command and arguments
+// This handles quoted arguments correctly
+func parseCommandString(command string) ([]string, error) {
+	var parts []string
+	var current string
+	var inQuotes bool
+	var quoteChar rune
+
+	for _, char := range command {
+		switch {
+		case char == '"' || char == '\'':
+			// Toggle quotes
+			if inQuotes && char == quoteChar {
+				inQuotes = false
+			} else if !inQuotes {
+				inQuotes = true
+				quoteChar = char
+			} else {
+				// Add the quote character if we're inside a different type of quotes
+				current += string(char)
+			}
+		case char == ' ' && !inQuotes:
+			// End of part
+			if current != "" {
+				parts = append(parts, current)
+				current = ""
+			}
+		default:
+			// Add to current part
+			current += string(char)
+		}
+	}
+
+	// Add the last part if there is one
+	if current != "" {
+		parts = append(parts, current)
+	}
+
+	// If we're still in quotes, that's an error
+	if inQuotes {
+		return nil, fmt.Errorf("unclosed quotes in command string")
+	}
+
+	return parts, nil
 }

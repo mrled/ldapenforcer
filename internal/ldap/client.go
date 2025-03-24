@@ -56,17 +56,23 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to connect to LDAP server: %w", err)
 	}
 
-	// Get the password from config or password file
+	// Get the password from config, password file, or password command
 	password, err := cfg.GetPassword()
 	if err != nil {
-		conn.Close()
+		// Only close the connection if it was successfully established
+		if conn != nil {
+			conn.Close()
+		}
 		return nil, fmt.Errorf("failed to get LDAP password: %w", err)
 	}
 
 	// Bind with DN and password
 	err = conn.Bind(cfg.LDAPEnforcer.BindDN, password)
 	if err != nil {
-		conn.Close()
+		// Only close the connection if it was successfully established
+		if conn != nil {
+			conn.Close()
+		}
 		return nil, fmt.Errorf("failed to bind to LDAP server: %w", err)
 	}
 
@@ -78,7 +84,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 
 // Close closes the LDAP connection
 func (c *Client) Close() {
-	if c.conn != nil {
+	if c != nil && c.conn != nil {
 		c.conn.Close()
 	}
 }
