@@ -25,7 +25,7 @@ func TestGetPersonAttributes(t *testing.T) {
 	}
 
 	// Check object classes for non-POSIX person
-	expectedClasses := []string{"top", "inetOrgPerson", "account"}
+	expectedClasses := []string{"top", "inetOrgPerson", "nsMemberOf", "account"}
 	if !reflect.DeepEqual(minAttrs["objectClass"], expectedClasses) {
 		t.Errorf("Expected objectClass to be %v, got %v", expectedClasses, minAttrs["objectClass"])
 	}
@@ -58,7 +58,7 @@ func TestGetPersonAttributes(t *testing.T) {
 	}
 
 	// Check POSIX attributes and object classes
-	expectedPosixClasses := []string{"top", "inetOrgPerson", "posixAccount"}
+	expectedPosixClasses := []string{"top", "inetOrgPerson", "nsMemberOf", "posixAccount"}
 	if !reflect.DeepEqual(fullAttrs["objectClass"], expectedPosixClasses) {
 		t.Errorf("Expected objectClass to be %v, got %v", expectedPosixClasses, fullAttrs["objectClass"])
 	}
@@ -95,7 +95,7 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 	}
 
 	// Check object classes for non-POSIX service account
-	expectedClasses := []string{"top", "inetOrgPerson", "account"}
+	expectedClasses := []string{"top", "inetOrgPerson", "nsMemberOf", "account"}
 	if !reflect.DeepEqual(minAttrs["objectClass"], expectedClasses) {
 		t.Errorf("Expected objectClass to be %v, got %v", expectedClasses, minAttrs["objectClass"])
 	}
@@ -128,7 +128,7 @@ func TestGetSvcAcctAttributes(t *testing.T) {
 	}
 
 	// Check POSIX attributes and object classes
-	expectedPosixClasses := []string{"top", "inetOrgPerson", "posixAccount"}
+	expectedPosixClasses := []string{"top", "inetOrgPerson", "nsMemberOf", "posixAccount"}
 	if !reflect.DeepEqual(fullAttrs["objectClass"], expectedPosixClasses) {
 		t.Errorf("Expected objectClass to be %v, got %v", expectedPosixClasses, fullAttrs["objectClass"])
 	}
