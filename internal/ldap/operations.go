@@ -2,7 +2,6 @@ package ldap
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/go-ldap/ldap/v3"
@@ -200,12 +199,10 @@ func (c *Client) SyncPerson(uid string, person *model.Person) error {
 	attrs := GetPersonAttributes(person)
 
 	if exists {
-		// Update existing person
-		log.Printf("Updating person: %s", dn)
+		logging.LDAPProtocolLogger.Trace("Updating person: %s", dn)
 		return c.ModifyEntry(dn, attrs, ldap.ReplaceAttribute)
 	} else {
-		// Create new person
-		log.Printf("Creating person: %s", dn)
+		logging.LDAPProtocolLogger.Trace("Creating person: %s", dn)
 		// Add the uid attribute which is required
 		attrs["uid"] = []string{uid}
 		return c.CreateEntry(dn, attrs)
@@ -228,12 +225,10 @@ func (c *Client) SyncSvcAcct(uid string, svcacct *model.SvcAcct) error {
 	attrs := GetSvcAcctAttributes(svcacct)
 
 	if exists {
-		// Update existing service account
-		log.Printf("Updating service account: %s", dn)
+		logging.LDAPProtocolLogger.Trace("Updating service account: %s", dn)
 		return c.ModifyEntry(dn, attrs, ldap.ReplaceAttribute)
 	} else {
-		// Create new service account
-		log.Printf("Creating service account: %s", dn)
+		logging.LDAPProtocolLogger.Trace("Creating service account: %s", dn)
 		// Add the uid attribute which is required
 		attrs["uid"] = []string{uid}
 		return c.CreateEntry(dn, attrs)
@@ -265,11 +260,11 @@ func (c *Client) SyncGroup(groupname string, group *model.Group) error {
 
 	if exists {
 		// Update existing group
-		log.Printf("Updating group: %s", dn)
+		logging.LDAPProtocolLogger.Trace("Updating group: %s", dn)
 		return c.ModifyEntry(dn, attrs, ldap.ReplaceAttribute)
 	} else {
 		// Create new group
-		log.Printf("Creating group: %s", dn)
+		logging.LDAPProtocolLogger.Trace("Creating group: %s", dn)
 		return c.CreateEntry(dn, attrs)
 	}
 }

@@ -9,8 +9,8 @@ import (
 
 func TestNewLogger(t *testing.T) {
 	logger := NewLogger("TEST")
-	if logger.currentLevel != ErrorLevel {
-		t.Errorf("Expected new logger to have ERROR level, got %v", logger.currentLevel)
+	if logger.currentLevel != InfoLevel {
+		t.Errorf("Expected new logger to have INFO level, got %v", logger.currentLevel)
 	}
 }
 

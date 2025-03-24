@@ -44,8 +44,8 @@ enforcing policies on LDAP directories.`,
 			cfg = createEmptyConfig()
 
 			// Set default log levels
-			cfg.LDAPEnforcer.Logging.Level = "ERROR"
-			cfg.LDAPEnforcer.Logging.LDAP.Level = "ERROR"
+			cfg.LDAPEnforcer.Logging.Level = "INFO"
+			cfg.LDAPEnforcer.Logging.LDAP.Level = "INFO"
 
 			// Load from environment variables
 			cfg.MergeWithEnv()
@@ -55,7 +55,7 @@ enforcing policies on LDAP directories.`,
 		}
 
 		// Initialize main logging system
-		mainLogLevel := logging.ErrorLevel
+		mainLogLevel := logging.InfoLevel // Default to INFO level
 
 		// Configure logging from the configuration
 		if cfg.LDAPEnforcer.Logging.Level != "" {

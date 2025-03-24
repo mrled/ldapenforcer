@@ -95,7 +95,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to bind to LDAP server: %w", err)
 	}
 
-	logging.LDAPProtocolLogger.Info("Successfully authenticated to LDAP server")
+	logging.LDAPProtocolLogger.Trace("Successfully authenticated to LDAP server")
 
 	return &Client{
 		conn:   conn,
@@ -190,7 +190,7 @@ func (c *Client) ModifyEntry(dn string, mods map[string][]string, operation int)
 		return fmt.Errorf("failed to modify LDAP entry: %w", err)
 	}
 
-	logging.LDAPProtocolLogger.Info("Successfully modified LDAP entry: %s", dn)
+	logging.LDAPProtocolLogger.Trace("Successfully modified LDAP entry: %s", dn)
 	return nil
 }
 

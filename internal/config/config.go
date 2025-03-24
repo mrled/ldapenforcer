@@ -117,7 +117,7 @@ func LoadConfig(configFile string) (*Config, error) {
 
 	// Set defaults for the logging configuration
 	if config.LDAPEnforcer.Logging.Level == "" {
-		config.LDAPEnforcer.Logging.Level = "ERROR"
+		config.LDAPEnforcer.Logging.Level = "INFO"
 	}
 
 	if config.LDAPEnforcer.Logging.LDAP.Level == "" {
@@ -421,8 +421,8 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("password-command", "", "Command to execute to retrieve the password")
 	flags.Bool("password-command-via-shell", false, "Execute password command via shell (using sh -c)")
 	flags.String("ca-cert-file", "", "Path to CA certificate file for LDAPS")
-	flags.String("log-level", "ERROR", "Main log level (ERROR, WARN, INFO, DEBUG, TRACE)")
-	flags.String("ldap-log-level", "ERROR", "LDAP-specific log level (ERROR, WARN, INFO, DEBUG, TRACE)")
+	flags.String("log-level", "INFO", "Main log level (ERROR, WARN, INFO, DEBUG, TRACE)")
+	flags.String("ldap-log-level", "INFO", "LDAP-specific log level (ERROR, WARN, INFO, DEBUG, TRACE)")
 	flags.String("enforced-people-ou", "", "Full OU for enforced people")
 	flags.String("enforced-svcacct-ou", "", "Full OU for enforced service accounts")
 	flags.String("enforced-group-ou", "", "Full OU for enforced groups")

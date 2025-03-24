@@ -55,7 +55,7 @@ var LDAPProtocolLogger = NewLogger("LDAP")
 // NewLogger creates a new logger with a specific name
 func NewLogger(name string) *Logger {
 	return &Logger{
-		currentLevel: ErrorLevel, // Default to ERROR level
+		currentLevel: InfoLevel, // Default to INFO level
 		errorLogger:  log.New(os.Stderr, fmt.Sprintf("[%s:ERROR] ", name), log.LstdFlags),
 		warnLogger:   log.New(os.Stderr, fmt.Sprintf("[%s:WARN]  ", name), log.LstdFlags),
 		infoLogger:   log.New(os.Stdout, fmt.Sprintf("[%s:INFO]  ", name), log.LstdFlags),
