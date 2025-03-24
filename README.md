@@ -2,6 +2,10 @@
 
 A command line tool for managing and enforcing policies on LDAP directories.
 
+Currently it assumes it's talking to an instance of
+[389 Directory Server](https://www.port389.org/)
+with the [MemberOf plugin](https://www.port389.org/docs/389ds/design/memberof-plugin.html) enabled.
+
 ## Installation
 
 ```bash
