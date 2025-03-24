@@ -47,6 +47,13 @@ func TestLoadConfig(t *testing.T) {
 }
 
 func TestGetPassword(t *testing.T) {
+	// Set the configDir for testing
+	absPath, err := filepath.Abs("testdata")
+	if err != nil {
+		t.Fatalf("Failed to get absolute path for testdata: %v", err)
+	}
+	configDir = absPath
+	
 	tests := []struct {
 		name           string
 		password       string
@@ -64,21 +71,21 @@ func TestGetPassword(t *testing.T) {
 		{
 			name:           "Password from file",
 			password:       "",
-			passwordFile:   "testdata/password.txt",
+			passwordFile:   "password.txt",
 			expectedResult: "secret_password",
 			expectError:    false,
 		},
 		{
 			name:           "Password with whitespace",
 			password:       "",
-			passwordFile:   "testdata/password_with_whitespace.txt",
+			passwordFile:   "password_with_whitespace.txt",
 			expectedResult: "secret_password_with_whitespace",
 			expectError:    false,
 		},
 		{
 			name:           "Nonexistent file",
 			password:       "",
-			passwordFile:   "testdata/nonexistent.txt",
+			passwordFile:   "nonexistent.txt",
 			expectedResult: "",
 			expectError:    true,
 		},

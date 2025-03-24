@@ -11,10 +11,12 @@ bind_dn = "cn=admin,dc=example,dc=com"
 # Password for binding to LDAP (either password or password_file must be provided)
 password = "admin_password"
 # OR
-# password_file = "/path/to/password/file.txt"
+# password_file = "/path/to/password/file.txt"  # Absolute path
+# password_file = "relative/path/to/password.txt"  # Relative to config file
 
 # Path to CA certificate file for LDAPS connections (only needed for LDAPS)
-# ca_cert_file = "/path/to/ca.crt"
+# ca_cert_file = "/path/to/ca.crt"  # Absolute path
+# ca_cert_file = "certs/ca.crt"  # Relative to config file
 
 # Directory Structure
 # Base DN for people (required)

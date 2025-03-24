@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-ldap/ldap/v3"
@@ -27,8 +28,19 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	isLDAPS := strings.HasPrefix(strings.ToLower(cfg.LDAPEnforcer.URI), "ldaps://")
 
 	if isLDAPS && cfg.LDAPEnforcer.CACertFile != "" {
+		// Get the CA certificate file path, resolving it if needed
+		caCertPath := cfg.LDAPEnforcer.CACertFile
+		
+		// If it's a relative path, make it relative to the config file directory
+		if !filepath.IsAbs(caCertPath) {
+			configDir, err := getConfigDir()
+			if err == nil && configDir != "" {
+				caCertPath = filepath.Join(configDir, caCertPath)
+			}
+		}
+		
 		// Load CA certificate
-		tlsConfig, err := createTLSConfig(cfg.LDAPEnforcer.CACertFile)
+		tlsConfig, err := createTLSConfig(caCertPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create TLS config: %w", err)
 		}
@@ -267,4 +279,10 @@ func createTLSConfig(caCertFile string) (*tls.Config, error) {
 	}
 
 	return tlsConfig, nil
+}
+
+// getConfigDir returns the directory of the main config file
+// by accessing the exported function from the config package
+func getConfigDir() (string, error) {
+	return config.GetConfigDir()
 }

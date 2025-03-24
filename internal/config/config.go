@@ -68,8 +68,15 @@ func LoadConfig(configFile string) (*Config, error) {
 		processedIncludes: make(map[string]bool),
 	}
 
+	// Store the directory of the main config file
+	absConfigFile, err := filepath.Abs(configFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve absolute path for config file: %w", err)
+	}
+	configDir = filepath.Dir(absConfigFile)
+
 	// Load the main config file
-	err := config.loadConfigFile(configFile)
+	err = config.loadConfigFile(configFile)
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +193,17 @@ func (c *Config) merge(other *Config) {
 	}
 }
 
+// configDir stores the directory of the main config file
+var configDir string
+
+// GetConfigDir returns the directory of the main config file
+func GetConfigDir() (string, error) {
+	if configDir == "" {
+		return "", fmt.Errorf("config directory not set, config file may not have been loaded")
+	}
+	return configDir, nil
+}
+
 // GetPassword returns the LDAP password, loading it from the password file if specified
 func (c *Config) GetPassword() (string, error) {
 	// If password is directly specified, use it
@@ -195,9 +213,15 @@ func (c *Config) GetPassword() (string, error) {
 
 	// Otherwise, try to load from the password file
 	if c.LDAPEnforcer.PasswordFile != "" {
-		data, err := os.ReadFile(c.LDAPEnforcer.PasswordFile)
+		// Resolve password file path relative to config file if it's not absolute
+		passwordFilePath := c.LDAPEnforcer.PasswordFile
+		if !filepath.IsAbs(passwordFilePath) && configDir != "" {
+			passwordFilePath = filepath.Join(configDir, passwordFilePath)
+		}
+
+		data, err := os.ReadFile(passwordFilePath)
 		if err != nil {
-			return "", fmt.Errorf("failed to read password file %s: %w", c.LDAPEnforcer.PasswordFile, err)
+			return "", fmt.Errorf("failed to read password file %s: %w", passwordFilePath, err)
 		}
 		// Trim whitespace
 		return strings.TrimSpace(string(data)), nil
