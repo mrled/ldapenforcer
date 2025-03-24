@@ -1,10 +1,17 @@
 [ldapenforcer]
 # LDAP Connection Settings
+# Standard LDAP connection
 uri = "ldap://example.com:389"
+# For secure LDAPS connection, use:
+# uri = "ldaps://example.com:636"
+
 bind_dn = "cn=admin,dc=example,dc=com"
 password = "admin_password"
 # OR
 # password_file = "/path/to/password/file.txt"
+
+# Path to CA certificate file for LDAPS connections (only needed for LDAPS)
+# ca_cert_file = "/path/to/ca.crt"
 
 # Directory Structure
 people_base_dn = "ou=people,dc=example,dc=com"

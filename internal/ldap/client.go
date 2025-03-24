@@ -1,8 +1,12 @@
 package ldap
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 	"github.com/mrled/ldapenforcer/internal/config"
@@ -16,8 +20,26 @@ type Client struct {
 
 // NewClient creates a new LDAP client
 func NewClient(cfg *config.Config) (*Client, error) {
-	// Connect to LDAP server
-	conn, err := ldap.DialURL(cfg.LDAPEnforcer.URI)
+	var conn *ldap.Conn
+	var err error
+
+	// Check if using LDAPS and configure TLS if needed
+	isLDAPS := strings.HasPrefix(strings.ToLower(cfg.LDAPEnforcer.URI), "ldaps://")
+
+	if isLDAPS && cfg.LDAPEnforcer.CACertFile != "" {
+		// Load CA certificate
+		tlsConfig, err := createTLSConfig(cfg.LDAPEnforcer.CACertFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create TLS config: %w", err)
+		}
+
+		// Connect with TLS
+		conn, err = ldap.DialURL(cfg.LDAPEnforcer.URI, ldap.DialWithTLSConfig(tlsConfig))
+	} else {
+		// Connect without TLS or with default TLS
+		conn, err = ldap.DialURL(cfg.LDAPEnforcer.URI)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to LDAP server: %w", err)
 	}
@@ -217,4 +239,32 @@ func getOUFromDN(dn string) string {
 	}
 
 	return ""
+}
+
+// createTLSConfig creates a TLS configuration for LDAPS connections
+func createTLSConfig(caCertFile string) (*tls.Config, error) {
+	// Create a certificate pool with system CA certificates
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		// If system cert pool is not available, create a new one
+		rootCAs = x509.NewCertPool()
+	}
+
+	// Read CA certificate
+	caCert, err := os.ReadFile(caCertFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CA certificate file %s: %w", caCertFile, err)
+	}
+
+	// Add CA certificate to the pool
+	if !rootCAs.AppendCertsFromPEM(caCert) {
+		return nil, fmt.Errorf("failed to append CA certificate from %s", caCertFile)
+	}
+
+	// Create TLS configuration
+	tlsConfig := &tls.Config{
+		RootCAs: rootCAs,
+	}
+
+	return tlsConfig, nil
 }

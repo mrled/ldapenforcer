@@ -116,6 +116,7 @@ func TestMergeWithFlags(t *testing.T) {
 	// Set some flag values
 	flags.Set("ldap-uri", "ldap://flagtest.com")
 	flags.Set("bind-dn", "cn=flaguser,dc=example,dc=com")
+	flags.Set("ca-cert-file", "/path/to/ca.crt")
 	flags.Set("people-base-dn", "ou=people,dc=flagtest,dc=com")
 	flags.Set("svcacct-base-dn", "ou=svcaccts,dc=flagtest,dc=com")
 	flags.Set("managed-ou", "flag-managed")
@@ -129,6 +130,9 @@ func TestMergeWithFlags(t *testing.T) {
 	}
 	if config.LDAPEnforcer.BindDN != "cn=flaguser,dc=example,dc=com" {
 		t.Errorf("Expected BindDN 'cn=flaguser,dc=example,dc=com', got '%s'", config.LDAPEnforcer.BindDN)
+	}
+	if config.LDAPEnforcer.CACertFile != "/path/to/ca.crt" {
+		t.Errorf("Expected CACertFile '/path/to/ca.crt', got '%s'", config.LDAPEnforcer.CACertFile)
 	}
 	if config.LDAPEnforcer.PeopleBaseDN != "ou=people,dc=flagtest,dc=com" {
 		t.Errorf("Expected PeopleBaseDN 'ou=people,dc=flagtest,dc=com', got '%s'", config.LDAPEnforcer.PeopleBaseDN)

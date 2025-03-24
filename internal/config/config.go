@@ -34,6 +34,9 @@ type LDAPEnforcerConfig struct {
 	// File containing the password for binding to LDAP
 	PasswordFile string `toml:"password_file"`
 
+	// Path to CA certificate file for LDAPS
+	CACertFile string `toml:"ca_cert_file"`
+
 	// Base DN for people
 	PeopleBaseDN string `toml:"people_base_dn"`
 
@@ -132,6 +135,9 @@ func (c *Config) merge(other *Config) {
 	if other.LDAPEnforcer.PasswordFile != "" {
 		c.LDAPEnforcer.PasswordFile = other.LDAPEnforcer.PasswordFile
 	}
+	if other.LDAPEnforcer.CACertFile != "" {
+		c.LDAPEnforcer.CACertFile = other.LDAPEnforcer.CACertFile
+	}
 	if other.LDAPEnforcer.PeopleBaseDN != "" {
 		c.LDAPEnforcer.PeopleBaseDN = other.LDAPEnforcer.PeopleBaseDN
 	}
@@ -207,6 +213,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("bind-dn", "", "DN for binding to LDAP")
 	flags.String("password", "", "Password for binding to LDAP")
 	flags.String("password-file", "", "File containing the password for binding to LDAP")
+	flags.String("ca-cert-file", "", "Path to CA certificate file for LDAPS")
 	flags.String("people-base-dn", "", "Base DN for people")
 	flags.String("svcacct-base-dn", "", "Base DN for service accounts")
 	flags.String("group-base-dn", "", "Base DN for groups")
@@ -226,6 +233,9 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	}
 	if passwordFile, _ := flags.GetString("password-file"); passwordFile != "" {
 		c.LDAPEnforcer.PasswordFile = passwordFile
+	}
+	if caCertFile, _ := flags.GetString("ca-cert-file"); caCertFile != "" {
+		c.LDAPEnforcer.CACertFile = caCertFile
 	}
 	if peopleBaseDN, _ := flags.GetString("people-base-dn"); peopleBaseDN != "" {
 		c.LDAPEnforcer.PeopleBaseDN = peopleBaseDN

@@ -1,7 +1,9 @@
 [ldapenforcer]
 # LDAP Connection Settings
 # URI for connecting to LDAP server (required)
+# Use ldap:// for standard connections or ldaps:// for secure connections
 uri = "ldap://example.com:389"
+# uri = "ldaps://example.com:636"  # Example for secure LDAPS connection
 
 # DN for binding to LDAP (required)
 bind_dn = "cn=admin,dc=example,dc=com"
@@ -10,6 +12,9 @@ bind_dn = "cn=admin,dc=example,dc=com"
 password = "admin_password"
 # OR
 # password_file = "/path/to/password/file.txt"
+
+# Path to CA certificate file for LDAPS connections (only needed for LDAPS)
+# ca_cert_file = "/path/to/ca.crt"
 
 # Directory Structure
 # Base DN for people (required)
