@@ -26,9 +26,22 @@ password = "admin_password"
 # ca_cert_file = "/path/to/ca.crt"  # Absolute path
 # ca_cert_file = "certs/ca.crt"  # Relative to config file
 
-# Log level - controls the verbosity of the application
-# Valid values: ERROR, WARN, INFO, DEBUG, LDAP, TRACE (case-insensitive)
-log_level = "INFO"
+# Logging configuration
+[ldapenforcer.logging]
+# Main application log level
+# Valid values: ERROR, WARN, INFO, DEBUG, TRACE (case-insensitive)
+# ERROR: Only error messages (default)
+# WARN: Warnings and errors
+# INFO: Informational messages, warnings, and errors
+# DEBUG: Debug messages and all above
+# TRACE: Trace messages (extremely verbose) and all above
+level = "ERROR"
+
+# LDAP-specific logging configuration
+[ldapenforcer.logging.ldap]
+# LDAP-specific log level - control LDAP protocol logging independently
+# Use DEBUG or TRACE level for detailed protocol logging
+level = "ERROR"
 
 # Directory Structure
 people_base_dn = "ou=people,dc=example,dc=com"

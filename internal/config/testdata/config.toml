@@ -4,9 +4,6 @@ uri = "ldap://example.com:389"
 bind_dn = "cn=admin,dc=example,dc=com"
 password = "admin_password"
 
-# Logging configuration
-log_level = "INFO"
-
 # Directory Structure
 people_base_dn = "ou=people,dc=example,dc=com"
 svcacct_base_dn = "ou=svcaccts,dc=example,dc=com"
@@ -15,3 +12,7 @@ managed_ou = "managed"
 
 # Includes - Processed at the end
 includes = ["includes/additional.toml"]
+
+# Logging configuration
+[ldapenforcer.logging]
+level = "INFO"

@@ -44,20 +44,41 @@ enforcing policies on LDAP directories.`,
 			cfg.MergeWithFlags(cmd.Flags())
 		}
 
-		// Initialize logging system with configured log level
-		if cfg.LDAPEnforcer.LogLevel != "" {
-			logLevel, err := logging.ParseLevel(cfg.LDAPEnforcer.LogLevel)
-			if err != nil {
-				// Just print a warning but continue with default log level
-				fmt.Fprintf(os.Stderr, "Warning: Invalid log level '%s', using INFO level instead\n", cfg.LDAPEnforcer.LogLevel)
-				logging.SetLevel(logging.InfoLevel)
+		// Initialize main logging system
+		mainLogLevel := logging.ErrorLevel
+
+		// Configure logging from the configuration
+		if cfg.LDAPEnforcer.Logging.Level != "" {
+			level, err := logging.ParseLevel(cfg.LDAPEnforcer.Logging.Level)
+			if err == nil {
+				mainLogLevel = level
 			} else {
-				logging.SetLevel(logLevel)
-				logging.Debug("Log level set to %s", logging.GetLevelName(logLevel))
+				fmt.Fprintf(os.Stderr, "Warning: Invalid main log level '%s', using ERROR level instead\n", cfg.LDAPEnforcer.Logging.Level)
 			}
-		} else {
-			// Default to INFO level if not specified
-			logging.SetLevel(logging.InfoLevel)
+		}
+
+		// Set main logging level
+		logging.DefaultLogger.SetLevel(mainLogLevel)
+		logging.DefaultLogger.Debug("Main log level set to %s", logging.GetLevelName(mainLogLevel))
+
+		// Initialize LDAP-specific logging
+		ldapLogLevel := mainLogLevel
+
+		// If LDAP-specific level is configured, use it instead
+		if cfg.LDAPEnforcer.Logging.LDAP.Level != "" {
+			level, err := logging.ParseLevel(cfg.LDAPEnforcer.Logging.LDAP.Level)
+			if err == nil {
+				ldapLogLevel = level
+			} else {
+				fmt.Fprintf(os.Stderr, "Warning: Invalid LDAP log level '%s', using main log level instead\n", cfg.LDAPEnforcer.Logging.LDAP.Level)
+			}
+		}
+
+		// Set LDAP logging level
+		logging.LDAPProtocolLogger.SetLevel(ldapLogLevel)
+
+		if ldapLogLevel != mainLogLevel {
+			logging.DefaultLogger.Debug("LDAP log level set to %s", logging.GetLevelName(ldapLogLevel))
 		}
 
 		return nil

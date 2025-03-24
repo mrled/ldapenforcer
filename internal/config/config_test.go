@@ -30,8 +30,8 @@ func TestLoadConfig(t *testing.T) {
 	if config.LDAPEnforcer.Password != "admin_password" {
 		t.Errorf("Expected Password 'admin_password', got '%s'", config.LDAPEnforcer.Password)
 	}
-	if config.LDAPEnforcer.LogLevel != "INFO" {
-		t.Errorf("Expected LogLevel 'INFO', got '%s'", config.LDAPEnforcer.LogLevel)
+	if config.LDAPEnforcer.Logging.Level != "INFO" {
+		t.Errorf("Expected Logging.Level 'INFO', got '%s'", config.LDAPEnforcer.Logging.Level)
 	}
 	if config.LDAPEnforcer.PeopleBaseDN != "ou=people,dc=example,dc=com" {
 		t.Errorf("Expected PeopleBaseDN 'ou=people,dc=example,dc=com', got '%s'", config.LDAPEnforcer.PeopleBaseDN)

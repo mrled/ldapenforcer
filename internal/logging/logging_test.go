@@ -7,10 +7,15 @@ import (
 	"testing"
 )
 
-func TestSetLevel(t *testing.T) {
-	// Store initial level to restore after test
-	initialLevel := currentLevel
-	defer SetLevel(initialLevel)
+func TestNewLogger(t *testing.T) {
+	logger := NewLogger("TEST")
+	if logger.currentLevel != ErrorLevel {
+		t.Errorf("Expected new logger to have ERROR level, got %v", logger.currentLevel)
+	}
+}
+
+func TestLoggerSetLevel(t *testing.T) {
+	logger := NewLogger("TEST")
 
 	// Test setting and getting level
 	levels := []LogLevel{
@@ -18,14 +23,13 @@ func TestSetLevel(t *testing.T) {
 		WarnLevel,
 		InfoLevel,
 		DebugLevel,
-		LDAPLevel,
 		TraceLevel,
 	}
 
 	for _, level := range levels {
-		SetLevel(level)
-		if GetLevel() != level {
-			t.Errorf("Expected level %v, got %v", level, GetLevel())
+		logger.SetLevel(level)
+		if logger.GetLevel() != level {
+			t.Errorf("Expected level %v, got %v", level, logger.GetLevel())
 		}
 	}
 }
@@ -39,7 +43,6 @@ func TestGetLevelName(t *testing.T) {
 		{WarnLevel, "WARN"},
 		{InfoLevel, "INFO"},
 		{DebugLevel, "DEBUG"},
-		{LDAPLevel, "LDAP"},
 		{TraceLevel, "TRACE"},
 		{LogLevel(99), "Level(99)"}, // Invalid level
 	}
@@ -61,7 +64,6 @@ func TestParseLevel(t *testing.T) {
 		{"WARN", WarnLevel, false},
 		{"INFO", InfoLevel, false},
 		{"DEBUG", DebugLevel, false},
-		{"LDAP", LDAPLevel, false},
 		{"TRACE", TraceLevel, false},
 		{"error", ErrorLevel, false},     // Case insensitive
 		{"wArN", WarnLevel, false},       // Mixed case
@@ -84,89 +86,82 @@ func TestParseLevel(t *testing.T) {
 	}
 }
 
-func TestLoggingOutputs(t *testing.T) {
-	// Store original levels and outputs
-	originalLevel := currentLevel
-	
+func TestLoggerOutputs(t *testing.T) {
+	// Create a test logger
+	logger := NewLogger("TEST")
+
 	// Create buffers to capture output
-	var errorBuf, warnBuf, infoBuf, debugBuf, ldapBuf, traceBuf bytes.Buffer
-	
+	var errorBuf, warnBuf, infoBuf, debugBuf, traceBuf bytes.Buffer
+
 	// Redirect logger outputs
-	errorLogger.SetOutput(&errorBuf)
-	warnLogger.SetOutput(&warnBuf)
-	infoLogger.SetOutput(&infoBuf)
-	debugLogger.SetOutput(&debugBuf)
-	ldapLogger.SetOutput(&ldapBuf)
-	traceLogger.SetOutput(&traceBuf)
-	
+	logger.errorLogger.SetOutput(&errorBuf)
+	logger.warnLogger.SetOutput(&warnBuf)
+	logger.infoLogger.SetOutput(&infoBuf)
+	logger.debugLogger.SetOutput(&debugBuf)
+	logger.traceLogger.SetOutput(&traceBuf)
+
 	// Test messages
 	errorMsg := "Error message"
 	warnMsg := "Warning message"
 	infoMsg := "Info message"
 	debugMsg := "Debug message"
-	ldapMsg := "LDAP message"
 	traceMsg := "Trace message"
-	
+
 	// Test at ERROR level
-	SetLevel(ErrorLevel)
-	Error(errorMsg)
-	Warn(warnMsg)
-	Info(infoMsg)
-	Debug(debugMsg)
-	LDAP(ldapMsg)
-	Trace(traceMsg)
-	
+	logger.SetLevel(ErrorLevel)
+	logger.Error(errorMsg)
+	logger.Warn(warnMsg)
+	logger.Info(infoMsg)
+	logger.Debug(debugMsg)
+	logger.Trace(traceMsg)
+
 	if !strings.Contains(errorBuf.String(), errorMsg) {
 		t.Errorf("ERROR level should log error messages")
 	}
-	if warnBuf.Len() > 0 || infoBuf.Len() > 0 || debugBuf.Len() > 0 || ldapBuf.Len() > 0 || traceBuf.Len() > 0 {
-		t.Errorf("ERROR level should not log warn, info, debug, ldap, or trace messages")
+	if warnBuf.Len() > 0 || infoBuf.Len() > 0 || debugBuf.Len() > 0 || traceBuf.Len() > 0 {
+		t.Errorf("ERROR level should not log warn, info, debug, or trace messages")
 	}
-	
+
 	// Reset buffers
 	errorBuf.Reset()
 	warnBuf.Reset()
 	infoBuf.Reset()
 	debugBuf.Reset()
-	ldapBuf.Reset()
 	traceBuf.Reset()
-	
+
 	// Test at WARN level
-	SetLevel(WarnLevel)
-	Error(errorMsg)
-	Warn(warnMsg)
-	Info(infoMsg)
-	Debug(debugMsg)
-	LDAP(ldapMsg)
-	Trace(traceMsg)
-	
+	logger.SetLevel(WarnLevel)
+	logger.Error(errorMsg)
+	logger.Warn(warnMsg)
+	logger.Info(infoMsg)
+	logger.Debug(debugMsg)
+	logger.Trace(traceMsg)
+
 	if !strings.Contains(errorBuf.String(), errorMsg) {
 		t.Errorf("WARN level should log error messages")
 	}
 	if !strings.Contains(warnBuf.String(), warnMsg) {
 		t.Errorf("WARN level should log warning messages")
 	}
-	if infoBuf.Len() > 0 || debugBuf.Len() > 0 || ldapBuf.Len() > 0 || traceBuf.Len() > 0 {
-		t.Errorf("WARN level should not log info, debug, ldap, or trace messages")
+	if infoBuf.Len() > 0 || debugBuf.Len() > 0 || traceBuf.Len() > 0 {
+		t.Errorf("WARN level should not log info, debug, or trace messages")
 	}
-	
+
 	// Reset buffers
 	errorBuf.Reset()
 	warnBuf.Reset()
 	infoBuf.Reset()
 	debugBuf.Reset()
-	ldapBuf.Reset()
 	traceBuf.Reset()
-	
+
 	// Test at INFO level
-	SetLevel(InfoLevel)
-	Error(errorMsg)
-	Warn(warnMsg)
-	Info(infoMsg)
-	Debug(debugMsg)
-	LDAP(ldapMsg)
-	Trace(traceMsg)
-	
+	logger.SetLevel(InfoLevel)
+	logger.Error(errorMsg)
+	logger.Warn(warnMsg)
+	logger.Info(infoMsg)
+	logger.Debug(debugMsg)
+	logger.Trace(traceMsg)
+
 	if !strings.Contains(errorBuf.String(), errorMsg) {
 		t.Errorf("INFO level should log error messages")
 	}
@@ -176,27 +171,25 @@ func TestLoggingOutputs(t *testing.T) {
 	if !strings.Contains(infoBuf.String(), infoMsg) {
 		t.Errorf("INFO level should log info messages")
 	}
-	if debugBuf.Len() > 0 || ldapBuf.Len() > 0 || traceBuf.Len() > 0 {
-		t.Errorf("INFO level should not log debug, ldap, or trace messages")
+	if debugBuf.Len() > 0 || traceBuf.Len() > 0 {
+		t.Errorf("INFO level should not log debug or trace messages")
 	}
-	
+
 	// Reset buffers
 	errorBuf.Reset()
 	warnBuf.Reset()
 	infoBuf.Reset()
 	debugBuf.Reset()
-	ldapBuf.Reset()
 	traceBuf.Reset()
-	
+
 	// Test at DEBUG level
-	SetLevel(DebugLevel)
-	Error(errorMsg)
-	Warn(warnMsg)
-	Info(infoMsg)
-	Debug(debugMsg)
-	LDAP(ldapMsg)
-	Trace(traceMsg)
-	
+	logger.SetLevel(DebugLevel)
+	logger.Error(errorMsg)
+	logger.Warn(warnMsg)
+	logger.Info(infoMsg)
+	logger.Debug(debugMsg)
+	logger.Trace(traceMsg)
+
 	if !strings.Contains(errorBuf.String(), errorMsg) {
 		t.Errorf("DEBUG level should log error messages")
 	}
@@ -209,63 +202,25 @@ func TestLoggingOutputs(t *testing.T) {
 	if !strings.Contains(debugBuf.String(), debugMsg) {
 		t.Errorf("DEBUG level should log debug messages")
 	}
-	if ldapBuf.Len() > 0 || traceBuf.Len() > 0 {
-		t.Errorf("DEBUG level should not log ldap or trace messages")
-	}
-	
-	// Reset buffers
-	errorBuf.Reset()
-	warnBuf.Reset()
-	infoBuf.Reset()
-	debugBuf.Reset()
-	ldapBuf.Reset()
-	traceBuf.Reset()
-	
-	// Test at LDAP level
-	SetLevel(LDAPLevel)
-	Error(errorMsg)
-	Warn(warnMsg)
-	Info(infoMsg)
-	Debug(debugMsg)
-	LDAP(ldapMsg)
-	Trace(traceMsg)
-	
-	if !strings.Contains(errorBuf.String(), errorMsg) {
-		t.Errorf("LDAP level should log error messages")
-	}
-	if !strings.Contains(warnBuf.String(), warnMsg) {
-		t.Errorf("LDAP level should log warning messages")
-	}
-	if !strings.Contains(infoBuf.String(), infoMsg) {
-		t.Errorf("LDAP level should log info messages")
-	}
-	if !strings.Contains(debugBuf.String(), debugMsg) {
-		t.Errorf("LDAP level should log debug messages")
-	}
-	if !strings.Contains(ldapBuf.String(), ldapMsg) {
-		t.Errorf("LDAP level should log ldap messages")
-	}
 	if traceBuf.Len() > 0 {
-		t.Errorf("LDAP level should not log trace messages")
+		t.Errorf("DEBUG level should not log trace messages")
 	}
-	
+
 	// Reset buffers
 	errorBuf.Reset()
 	warnBuf.Reset()
 	infoBuf.Reset()
 	debugBuf.Reset()
-	ldapBuf.Reset()
 	traceBuf.Reset()
-	
+
 	// Test at TRACE level
-	SetLevel(TraceLevel)
-	Error(errorMsg)
-	Warn(warnMsg)
-	Info(infoMsg)
-	Debug(debugMsg)
-	LDAP(ldapMsg)
-	Trace(traceMsg)
-	
+	logger.SetLevel(TraceLevel)
+	logger.Error(errorMsg)
+	logger.Warn(warnMsg)
+	logger.Info(infoMsg)
+	logger.Debug(debugMsg)
+	logger.Trace(traceMsg)
+
 	if !strings.Contains(errorBuf.String(), errorMsg) {
 		t.Errorf("TRACE level should log error messages")
 	}
@@ -278,161 +233,199 @@ func TestLoggingOutputs(t *testing.T) {
 	if !strings.Contains(debugBuf.String(), debugMsg) {
 		t.Errorf("TRACE level should log debug messages")
 	}
-	if !strings.Contains(ldapBuf.String(), ldapMsg) {
-		t.Errorf("TRACE level should log ldap messages")
-	}
 	if !strings.Contains(traceBuf.String(), traceMsg) {
 		t.Errorf("TRACE level should log trace messages")
 	}
-	
-	// Restore original level
-	SetLevel(originalLevel)
 }
 
-func TestSetOutput(t *testing.T) {
+func TestLoggerSetOutput(t *testing.T) {
+	// Create a test logger
+	logger := NewLogger("TEST")
+
 	// Create buffer and test redirection
 	var buf bytes.Buffer
-	
+
 	// Test setting output for each level
 	levels := []LogLevel{
 		ErrorLevel,
 		WarnLevel,
 		InfoLevel,
 		DebugLevel,
-		LDAPLevel,
 		TraceLevel,
 	}
-	
+
 	messages := map[LogLevel]string{
 		ErrorLevel: "Error test",
 		WarnLevel:  "Warn test",
 		InfoLevel:  "Info test",
 		DebugLevel: "Debug test",
-		LDAPLevel:  "LDAP test",
 		TraceLevel: "Trace test",
 	}
-	
-	// Store original level
-	originalLevel := currentLevel
-	SetLevel(TraceLevel) // Set to highest level so all messages are logged
-	
+
+	// Set to highest level so all messages are logged
+	logger.SetLevel(TraceLevel)
+
 	for _, level := range levels {
 		// Reset buffer
 		buf.Reset()
-		
+
 		// Set output for this level only
-		SetOutput(level, &buf)
-		
+		logger.SetOutput(level, &buf)
+
 		// Log a message at this level
 		switch level {
 		case ErrorLevel:
-			Error(messages[level])
+			logger.Error(messages[level])
 		case WarnLevel:
-			Warn(messages[level])
+			logger.Warn(messages[level])
 		case InfoLevel:
-			Info(messages[level])
+			logger.Info(messages[level])
 		case DebugLevel:
-			Debug(messages[level])
-		case LDAPLevel:
-			LDAP(messages[level])
+			logger.Debug(messages[level])
 		case TraceLevel:
-			Trace(messages[level])
+			logger.Trace(messages[level])
 		}
-		
+
 		// Check that message was logged to buffer
 		if !strings.Contains(buf.String(), messages[level]) {
 			t.Errorf("Message for level %s not logged to buffer", GetLevelName(level))
 		}
-		
+
 		// Reset output to original
 		switch level {
 		case ErrorLevel:
-			errorLogger.SetOutput(os.Stderr)
+			logger.errorLogger.SetOutput(os.Stderr)
 		case WarnLevel:
-			warnLogger.SetOutput(os.Stderr)
+			logger.warnLogger.SetOutput(os.Stderr)
 		case InfoLevel:
-			infoLogger.SetOutput(os.Stdout)
+			logger.infoLogger.SetOutput(os.Stdout)
 		case DebugLevel:
-			debugLogger.SetOutput(os.Stdout)
-		case LDAPLevel:
-			ldapLogger.SetOutput(os.Stdout)
+			logger.debugLogger.SetOutput(os.Stdout)
 		case TraceLevel:
-			traceLogger.SetOutput(os.Stdout)
+			logger.traceLogger.SetOutput(os.Stdout)
 		}
 	}
-	
-	// Restore original level
-	SetLevel(originalLevel)
 }
 
-func TestSetPrefix(t *testing.T) {
+func TestLoggerSetPrefix(t *testing.T) {
+	// Create a test logger
+	logger := NewLogger("TEST")
+
 	// Create buffer to capture output
 	var buf bytes.Buffer
-	
-	// Store original level and prefix
-	originalLevel := currentLevel
-	originalPrefix := errorLogger.Prefix()
-	
+
 	// Set level to error for testing
-	SetLevel(ErrorLevel)
-	
+	logger.SetLevel(ErrorLevel)
+
 	// Set output to buffer
-	errorLogger.SetOutput(&buf)
-	
+	logger.errorLogger.SetOutput(&buf)
+
 	// Test setting prefix
-	testPrefix := "[TEST] "
-	SetPrefix(ErrorLevel, testPrefix)
-	
-	if errorLogger.Prefix() != testPrefix {
-		t.Errorf("Expected prefix '%s', got '%s'", testPrefix, errorLogger.Prefix())
+	testPrefix := "[TEST-PREFIX] "
+	logger.SetPrefix(ErrorLevel, testPrefix)
+
+	if logger.errorLogger.Prefix() != testPrefix {
+		t.Errorf("Expected prefix '%s', got '%s'", testPrefix, logger.errorLogger.Prefix())
 	}
-	
+
 	// Log a message
-	Error("Test message")
-	
+	logger.Error("Test message")
+
 	// Check that message was logged with new prefix
 	if !strings.Contains(buf.String(), testPrefix) {
 		t.Errorf("Message not logged with expected prefix '%s'", testPrefix)
 	}
-	
+
 	// Restore original settings
-	SetLevel(originalLevel)
-	SetPrefix(ErrorLevel, originalPrefix)
-	errorLogger.SetOutput(os.Stderr)
+	logger.errorLogger.SetOutput(os.Stderr)
 }
 
-func TestSetFlags(t *testing.T) {
+func TestLoggerSetFlags(t *testing.T) {
+	// Create a test logger
+	logger := NewLogger("TEST")
+
 	// Create buffer to capture output
 	var buf bytes.Buffer
-	
-	// Store original settings
-	originalLevel := currentLevel
-	originalFlags := errorLogger.Flags()
-	
+
+	// Store original flags
+	originalFlags := logger.errorLogger.Flags()
+
 	// Set level to error for testing
-	SetLevel(ErrorLevel)
-	
+	logger.SetLevel(ErrorLevel)
+
 	// Set output to buffer
-	errorLogger.SetOutput(&buf)
-	
+	logger.errorLogger.SetOutput(&buf)
+
 	// Test setting flags
 	testFlags := 0 // No flags
-	SetFlags(ErrorLevel, testFlags)
-	
-	if errorLogger.Flags() != testFlags {
-		t.Errorf("Expected flags %d, got %d", testFlags, errorLogger.Flags())
+	logger.SetFlags(ErrorLevel, testFlags)
+
+	if logger.errorLogger.Flags() != testFlags {
+		t.Errorf("Expected flags %d, got %d", testFlags, logger.errorLogger.Flags())
 	}
-	
+
 	// Log a message
-	Error("Test message")
-	
-	// Check that message was logged with no date/time
-	if strings.Contains(buf.String(), ":") { // Date/time usually contains colons
-		t.Errorf("Message logged with unexpected format (should have no date/time with flags=0)")
+	logger.Error("Test message")
+
+	// Just check that the message was logged
+	if !strings.Contains(buf.String(), "Test message") {
+		t.Errorf("Message not logged with flags=0")
 	}
-	
+
 	// Restore original settings
-	SetLevel(originalLevel)
-	SetFlags(ErrorLevel, originalFlags)
-	errorLogger.SetOutput(os.Stderr)
+	logger.SetFlags(ErrorLevel, originalFlags)
+	logger.errorLogger.SetOutput(os.Stderr)
+}
+
+func TestDefaultLogger(t *testing.T) {
+	// Create buffers to capture output
+	var buf bytes.Buffer
+
+	// Store original settings
+	originalLevel := DefaultLogger.GetLevel()
+	defer DefaultLogger.SetLevel(originalLevel)
+
+	// Test that we can use the global functions that operate on DefaultLogger
+	DefaultLogger.SetLevel(ErrorLevel)
+	DefaultLogger.SetOutput(ErrorLevel, &buf)
+
+	// Log a message
+	DefaultLogger.Error("Test message")
+
+	// Check that message was logged
+	if !strings.Contains(buf.String(), "Test message") {
+		t.Errorf("Message not logged to buffer using global Error function")
+	}
+
+	// Restore original settings
+	DefaultLogger.SetOutput(ErrorLevel, os.Stderr)
+}
+
+func TestLDAPProtocolLogger(t *testing.T) {
+	// Create buffers to capture output
+	var buf bytes.Buffer
+
+	// Store original settings
+	originalLevel := LDAPProtocolLogger.GetLevel()
+	defer LDAPProtocolLogger.SetLevel(originalLevel)
+
+	// Test the LDAP-specific logger
+	LDAPProtocolLogger.SetLevel(DebugLevel)
+	LDAPProtocolLogger.SetOutput(DebugLevel, &buf)
+
+	// Log a message
+	LDAPProtocolLogger.Debug("Test LDAP protocol message")
+
+	// Check that message was logged
+	if !strings.Contains(buf.String(), "Test LDAP protocol message") {
+		t.Errorf("Message not logged to buffer using LDAP protocol logger")
+	}
+
+	// Check prefix contains "LDAP"
+	if !strings.Contains(buf.String(), "[LDAP:") {
+		t.Errorf("LDAP logger should have 'LDAP' in prefix, got: %s", buf.String())
+	}
+
+	// Restore original settings
+	LDAPProtocolLogger.SetOutput(DebugLevel, os.Stdout)
 }

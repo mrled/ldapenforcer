@@ -45,9 +45,9 @@ type LDAPEnforcerConfig struct {
 
 	// Path to CA certificate file for LDAPS
 	CACertFile string `toml:"ca_cert_file"`
-	
-	// Log level - one of: ERROR, WARN, INFO, DEBUG, LDAP, TRACE
-	LogLevel string `toml:"log_level"`
+
+	// Logging configuration
+	Logging LoggingConfig `toml:"logging"`
 
 	// Base DN for people
 	PeopleBaseDN string `toml:"people_base_dn"`
@@ -74,11 +74,32 @@ type LDAPEnforcerConfig struct {
 	Group map[string]*model.Group `toml:"group"`
 }
 
+// LoggingConfig holds logging configuration
+type LoggingConfig struct {
+	// Level for main application logs
+	Level string `toml:"level"`
+
+	// LDAP specific logging configuration
+	LDAP LDAPLoggingConfig `toml:"ldap"`
+}
+
+// LDAPLoggingConfig holds LDAP-specific logging configuration
+type LDAPLoggingConfig struct {
+	// Level for LDAP-related logs
+	Level string `toml:"level"`
+}
+
 // LoadConfig loads configuration from the specified file
 func LoadConfig(configFile string) (*Config, error) {
 	config := &Config{
 		processedIncludes: make(map[string]bool),
 	}
+
+	// Initialize the config structure to avoid nil pointers
+	config.LDAPEnforcer.Person = make(map[string]*model.Person)
+	config.LDAPEnforcer.SvcAcct = make(map[string]*model.SvcAcct)
+	config.LDAPEnforcer.Group = make(map[string]*model.Group)
+	config.LDAPEnforcer.Includes = make([]string, 0)
 
 	// Store the directory of the main config file
 	absConfigFile, err := filepath.Abs(configFile)
@@ -91,6 +112,15 @@ func LoadConfig(configFile string) (*Config, error) {
 	err = config.loadConfigFile(configFile)
 	if err != nil {
 		return nil, err
+	}
+
+	// Set defaults for the logging configuration
+	if config.LDAPEnforcer.Logging.Level == "" {
+		config.LDAPEnforcer.Logging.Level = "ERROR"
+	}
+
+	if config.LDAPEnforcer.Logging.LDAP.Level == "" {
+		config.LDAPEnforcer.Logging.LDAP.Level = config.LDAPEnforcer.Logging.Level
 	}
 
 	return config, nil
@@ -117,12 +147,19 @@ func (c *Config) loadConfigFile(configFile string) error {
 		return fmt.Errorf("failed to decode config file %s: %w", absPath, err)
 	}
 
-	// Merge configs
+	// Store the includes to process after merging
+	includes := make([]string, len(config.LDAPEnforcer.Includes))
+	copy(includes, config.LDAPEnforcer.Includes)
+
+	// Get the directory for this config file
+	configDir := filepath.Dir(absPath)
+
+	// First merge the current config file into our config
 	c.merge(&config)
 
-	// Process includes
-	configDir := filepath.Dir(absPath)
-	for _, include := range config.LDAPEnforcer.Includes {
+	// Process includes - process them AFTER merging the current file
+	// This ensures that included files can override settings from the parent file
+	for _, include := range includes {
 		var includePath string
 		if filepath.IsAbs(include) {
 			includePath = include
@@ -164,8 +201,12 @@ func (c *Config) merge(other *Config) {
 	if other.LDAPEnforcer.CACertFile != "" {
 		c.LDAPEnforcer.CACertFile = other.LDAPEnforcer.CACertFile
 	}
-	if other.LDAPEnforcer.LogLevel != "" {
-		c.LDAPEnforcer.LogLevel = other.LDAPEnforcer.LogLevel
+	// Handle the logging structure
+	if other.LDAPEnforcer.Logging.Level != "" {
+		c.LDAPEnforcer.Logging.Level = other.LDAPEnforcer.Logging.Level
+	}
+	if other.LDAPEnforcer.Logging.LDAP.Level != "" {
+		c.LDAPEnforcer.Logging.LDAP.Level = other.LDAPEnforcer.Logging.LDAP.Level
 	}
 	if other.LDAPEnforcer.PeopleBaseDN != "" {
 		c.LDAPEnforcer.PeopleBaseDN = other.LDAPEnforcer.PeopleBaseDN
@@ -179,6 +220,9 @@ func (c *Config) merge(other *Config) {
 	if other.LDAPEnforcer.ManagedOU != "" {
 		c.LDAPEnforcer.ManagedOU = other.LDAPEnforcer.ManagedOU
 	}
+
+	// Make sure we also append any includes
+	c.LDAPEnforcer.Includes = append(c.LDAPEnforcer.Includes, other.LDAPEnforcer.Includes...)
 
 	// Merge people
 	if other.LDAPEnforcer.Person != nil {
@@ -251,11 +295,11 @@ func (c *Config) GetPassword() (string, error) {
 
 	// Try to execute the password command
 	if c.LDAPEnforcer.PasswordCommand != "" {
-		logging.Debug("Executing password command to retrieve LDAP credentials")
+		logging.DefaultLogger.Debug("Executing password command to retrieve LDAP credentials")
 
 		// Use shell if explicitly requested via password_command_via_shell
 		if c.LDAPEnforcer.PasswordCommandViaShell {
-			logging.Debug("Executing password command via shell (sh -c)")
+			logging.DefaultLogger.Debug("Executing password command via shell (sh -c)")
 			// Use shell to execute the command
 			cmd := exec.Command("sh", "-c", c.LDAPEnforcer.PasswordCommand)
 
@@ -267,13 +311,13 @@ func (c *Config) GetPassword() (string, error) {
 			// Run the command
 			err := cmd.Run()
 			if err != nil {
-				logging.Error("Error executing shell password command: %v", err)
+				logging.DefaultLogger.Error("Error executing shell password command: %v", err)
 				return "", fmt.Errorf("failed to execute shell password command: %w", err)
 			}
 
 			// Return the password from stdout, trimming whitespace
 			result := strings.TrimSpace(stdout.String())
-			logging.Debug("Successfully retrieved password from command (length: %d)", len(result))
+			logging.DefaultLogger.Debug("Successfully retrieved password from command (length: %d)", len(result))
 			return result, nil
 		} else {
 			// Split the command and its arguments for direct execution
@@ -286,7 +330,7 @@ func (c *Config) GetPassword() (string, error) {
 				return "", fmt.Errorf("empty password command")
 			}
 
-			logging.Debug("Executing direct command: %s", parts[0])
+			logging.DefaultLogger.Debug("Executing direct command: %s", parts[0])
 			// Create the command
 			cmd := exec.Command(parts[0], parts[1:]...)
 
@@ -298,13 +342,13 @@ func (c *Config) GetPassword() (string, error) {
 			// Run the command
 			err = cmd.Run()
 			if err != nil {
-				logging.Error("Error executing password command: %v", err)
+				logging.DefaultLogger.Error("Error executing password command: %v", err)
 				return "", fmt.Errorf("failed to execute password command: %w", err)
 			}
 
 			// Return the password from stdout, trimming whitespace
 			result := strings.TrimSpace(stdout.String())
-			logging.Debug("Successfully retrieved password from command (length: %d)", len(result))
+			logging.DefaultLogger.Debug("Successfully retrieved password from command (length: %d)", len(result))
 			return result, nil
 		}
 	}
@@ -322,7 +366,8 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("password-command", "", "Command to execute to retrieve the password")
 	flags.Bool("password-command-via-shell", false, "Execute password command via shell (using sh -c)")
 	flags.String("ca-cert-file", "", "Path to CA certificate file for LDAPS")
-	flags.String("log-level", "INFO", "Log level (ERROR, WARN, INFO, DEBUG, LDAP, TRACE)")
+	flags.String("log-level", "ERROR", "Main log level (ERROR, WARN, INFO, DEBUG, TRACE)")
+	flags.String("ldap-log-level", "ERROR", "LDAP-specific log level (ERROR, WARN, INFO, DEBUG, TRACE)")
 	flags.String("people-base-dn", "", "Base DN for people")
 	flags.String("svcacct-base-dn", "", "Base DN for service accounts")
 	flags.String("group-base-dn", "", "Base DN for groups")
@@ -353,7 +398,10 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 		c.LDAPEnforcer.CACertFile = caCertFile
 	}
 	if logLevel, _ := flags.GetString("log-level"); logLevel != "" {
-		c.LDAPEnforcer.LogLevel = logLevel
+		c.LDAPEnforcer.Logging.Level = logLevel
+	}
+	if ldapLogLevel, _ := flags.GetString("ldap-log-level"); ldapLogLevel != "" {
+		c.LDAPEnforcer.Logging.LDAP.Level = ldapLogLevel
 	}
 	if peopleBaseDN, _ := flags.GetString("people-base-dn"); peopleBaseDN != "" {
 		c.LDAPEnforcer.PeopleBaseDN = peopleBaseDN

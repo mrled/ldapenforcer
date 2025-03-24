@@ -21,8 +21,6 @@ const (
 	InfoLevel
 	// DebugLevel logs debug messages, informational messages, warnings, and errors
 	DebugLevel
-	// LDAPLevel logs LDAP-specific debug information (for LDAP protocol debugging)
-	LDAPLevel
 	// TraceLevel logs everything including very detailed traces
 	TraceLevel
 )
@@ -34,30 +32,46 @@ var (
 		WarnLevel:  "WARN",
 		InfoLevel:  "INFO",
 		DebugLevel: "DEBUG",
-		LDAPLevel:  "LDAP",
 		TraceLevel: "TRACE",
 	}
-
-	// Current log level
-	currentLevel = InfoLevel
-
-	// Logger instances for each level
-	errorLogger = log.New(os.Stderr, "[ERROR] ", log.LstdFlags)
-	warnLogger  = log.New(os.Stderr, "[WARN]  ", log.LstdFlags)
-	infoLogger  = log.New(os.Stdout, "[INFO]  ", log.LstdFlags)
-	debugLogger = log.New(os.Stdout, "[DEBUG] ", log.LstdFlags)
-	ldapLogger  = log.New(os.Stdout, "[LDAP]  ", log.LstdFlags)
-	traceLogger = log.New(os.Stdout, "[TRACE] ", log.LstdFlags)
 )
 
-// SetLevel sets the logging level
-func SetLevel(level LogLevel) {
-	currentLevel = level
+// Logger represents a configured logger with its own level
+type Logger struct {
+	currentLevel LogLevel
+	errorLogger  *log.Logger
+	warnLogger   *log.Logger
+	infoLogger   *log.Logger
+	debugLogger  *log.Logger
+	traceLogger  *log.Logger
 }
 
-// GetLevel returns the current logging level
-func GetLevel() LogLevel {
-	return currentLevel
+// Default logger instance for application-wide logging
+var DefaultLogger = NewLogger("APP")
+
+// LDAPProtocolLogger is a dedicated logger for LDAP protocol operations
+var LDAPProtocolLogger = NewLogger("LDAP")
+
+// NewLogger creates a new logger with a specific name
+func NewLogger(name string) *Logger {
+	return &Logger{
+		currentLevel: ErrorLevel, // Default to ERROR level
+		errorLogger:  log.New(os.Stderr, fmt.Sprintf("[%s:ERROR] ", name), log.LstdFlags),
+		warnLogger:   log.New(os.Stderr, fmt.Sprintf("[%s:WARN]  ", name), log.LstdFlags),
+		infoLogger:   log.New(os.Stdout, fmt.Sprintf("[%s:INFO]  ", name), log.LstdFlags),
+		debugLogger:  log.New(os.Stdout, fmt.Sprintf("[%s:DEBUG] ", name), log.LstdFlags),
+		traceLogger:  log.New(os.Stdout, fmt.Sprintf("[%s:TRACE] ", name), log.LstdFlags),
+	}
+}
+
+// SetLevel sets the logging level for this logger
+func (l *Logger) SetLevel(level LogLevel) {
+	l.currentLevel = level
+}
+
+// GetLevel returns the current logging level for this logger
+func (l *Logger) GetLevel() LogLevel {
+	return l.currentLevel
 }
 
 // GetLevelName returns the string representation of a log level
@@ -81,95 +95,82 @@ func ParseLevel(level string) (LogLevel, error) {
 }
 
 // Error logs an error message
-func Error(format string, v ...interface{}) {
-	errorLogger.Printf(format, v...)
+func (l *Logger) Error(format string, v ...interface{}) {
+	l.errorLogger.Printf(format, v...)
 }
 
 // Warn logs a warning message if the log level is WarnLevel or higher
-func Warn(format string, v ...interface{}) {
-	if currentLevel >= WarnLevel {
-		warnLogger.Printf(format, v...)
+func (l *Logger) Warn(format string, v ...interface{}) {
+	if l.currentLevel >= WarnLevel {
+		l.warnLogger.Printf(format, v...)
 	}
 }
 
 // Info logs an informational message if the log level is InfoLevel or higher
-func Info(format string, v ...interface{}) {
-	if currentLevel >= InfoLevel {
-		infoLogger.Printf(format, v...)
+func (l *Logger) Info(format string, v ...interface{}) {
+	if l.currentLevel >= InfoLevel {
+		l.infoLogger.Printf(format, v...)
 	}
 }
 
 // Debug logs a debug message if the log level is DebugLevel or higher
-func Debug(format string, v ...interface{}) {
-	if currentLevel >= DebugLevel {
-		debugLogger.Printf(format, v...)
-	}
-}
-
-// LDAP logs an LDAP-specific message if the log level is LDAPLevel or higher
-func LDAP(format string, v ...interface{}) {
-	if currentLevel >= LDAPLevel {
-		ldapLogger.Printf(format, v...)
+func (l *Logger) Debug(format string, v ...interface{}) {
+	if l.currentLevel >= DebugLevel {
+		l.debugLogger.Printf(format, v...)
 	}
 }
 
 // Trace logs a trace message if the log level is TraceLevel
-func Trace(format string, v ...interface{}) {
-	if currentLevel >= TraceLevel {
-		traceLogger.Printf(format, v...)
+func (l *Logger) Trace(format string, v ...interface{}) {
+	if l.currentLevel >= TraceLevel {
+		l.traceLogger.Printf(format, v...)
 	}
 }
 
 // SetOutput sets the output destination for a specific log level
-func SetOutput(level LogLevel, w io.Writer) {
+func (l *Logger) SetOutput(level LogLevel, w io.Writer) {
 	switch level {
 	case ErrorLevel:
-		errorLogger.SetOutput(w)
+		l.errorLogger.SetOutput(w)
 	case WarnLevel:
-		warnLogger.SetOutput(w)
+		l.warnLogger.SetOutput(w)
 	case InfoLevel:
-		infoLogger.SetOutput(w)
+		l.infoLogger.SetOutput(w)
 	case DebugLevel:
-		debugLogger.SetOutput(w)
-	case LDAPLevel:
-		ldapLogger.SetOutput(w)
+		l.debugLogger.SetOutput(w)
 	case TraceLevel:
-		traceLogger.SetOutput(w)
+		l.traceLogger.SetOutput(w)
 	}
 }
 
 // SetPrefix sets the prefix for a specific log level
-func SetPrefix(level LogLevel, prefix string) {
+func (l *Logger) SetPrefix(level LogLevel, prefix string) {
 	switch level {
 	case ErrorLevel:
-		errorLogger.SetPrefix(prefix)
+		l.errorLogger.SetPrefix(prefix)
 	case WarnLevel:
-		warnLogger.SetPrefix(prefix)
+		l.warnLogger.SetPrefix(prefix)
 	case InfoLevel:
-		infoLogger.SetPrefix(prefix)
+		l.infoLogger.SetPrefix(prefix)
 	case DebugLevel:
-		debugLogger.SetPrefix(prefix)
-	case LDAPLevel:
-		ldapLogger.SetPrefix(prefix)
+		l.debugLogger.SetPrefix(prefix)
 	case TraceLevel:
-		traceLogger.SetPrefix(prefix)
+		l.traceLogger.SetPrefix(prefix)
 	}
 }
 
 // SetFlags sets the flags for a specific log level
-func SetFlags(level LogLevel, flags int) {
+func (l *Logger) SetFlags(level LogLevel, flags int) {
 	switch level {
 	case ErrorLevel:
-		errorLogger.SetFlags(flags)
+		l.errorLogger.SetFlags(flags)
 	case WarnLevel:
-		warnLogger.SetFlags(flags)
+		l.warnLogger.SetFlags(flags)
 	case InfoLevel:
-		infoLogger.SetFlags(flags)
+		l.infoLogger.SetFlags(flags)
 	case DebugLevel:
-		debugLogger.SetFlags(flags)
-	case LDAPLevel:
-		ldapLogger.SetFlags(flags)
+		l.debugLogger.SetFlags(flags)
 	case TraceLevel:
-		traceLogger.SetFlags(flags)
+		l.traceLogger.SetFlags(flags)
 	}
 }
