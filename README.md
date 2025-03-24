@@ -2,6 +2,18 @@
 
 A command line tool for managing and enforcing policies on LDAP directories.
 
+ldapenforcer keeps the definitions of users (people and service accounts),
+groups, and group membership in plain text files that can be committed to git.
+The synchronization process can be run repeatedly to no ill effect ---
+unlike applying LDIFs, which will only work once for some operations like add or delete.
+
+It's not designed to "move" objects between OUs; it will simply delete and recreate them.
+If unmanaged attributes are set on objects in the LDAP directory,
+including passwords, profile images, physical addresses, phone numbers, or any other attribute,
+moving them in this way will destroy them.
+It's designed to complement other user/group management tools,
+and it isn't intended to make an LDAP server fully stateless.
+
 Currently it assumes it's talking to an instance of
 [389 Directory Server](https://www.port389.org/)
 with the [MemberOf plugin](https://www.port389.org/docs/389ds/design/memberof-plugin.html) enabled.
