@@ -206,6 +206,12 @@ If a group is referenced in another group's `groups` list, only the members of t
 
 Note: The term "user" refers collectively to people and service accounts when discussing both types of entities.
 
+**Empty groups are not permitted by the `groupOfNames` object class**.
+If you define an enforced group which has no members at all in the configuration,
+it will not be created in the directory.
+If all members are removed from an enforced group in the configuration,
+it will be deleted from the directory.
+
 ## LDAP Synchronization
 
 LDAPEnforcer can synchronize the directory with your configuration, creating or updating LDAP entries to match your defined entities.

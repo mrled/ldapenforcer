@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-ldap/ldap/v3"
+	"github.com/mrled/ldapenforcer/internal/logging"
 	"github.com/mrled/ldapenforcer/internal/model"
 )
 
@@ -144,9 +145,9 @@ func (c *Client) GetGroupAttributes(groupname string, group *model.Group) (map[s
 		memberDNs = append(memberDNs, member.DN)
 	}
 
-	// If there are no members, add the bind DN to avoid empty group error
+	// We require at least one member for a valid group
 	if len(memberDNs) == 0 {
-		memberDNs = append(memberDNs, c.config.LDAPEnforcer.BindDN)
+		return nil, fmt.Errorf("group has no members after resolving: %s", groupname)
 	}
 
 	attrs["member"] = memberDNs
@@ -249,6 +250,16 @@ func (c *Client) SyncGroup(groupname string, group *model.Group) error {
 
 	attrs, err := c.GetGroupAttributes(groupname, group)
 	if err != nil {
+		// If the error indicates an empty group
+		if err.Error() == fmt.Sprintf("group has no members after resolving: %s", groupname) {
+			if exists {
+				logging.DefaultLogger.Warn("Deleting memberless group %s (add at least one member)", groupname)
+				return c.DeleteEntry(dn)
+			} else {
+				logging.DefaultLogger.Warn("Refusing to create memberless group %s (add at least one member)", groupname)
+			}
+			return nil
+		}
 		return err
 	}
 
