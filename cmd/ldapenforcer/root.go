@@ -30,29 +30,26 @@ enforcing policies on LDAP directories.`,
 
 		var err error
 
-		// If config file specified, load it
+		// If config file specified, load it (this includes the defaults and the config file values)
 		if cfgFile != "" {
 			cfg, err = config.LoadConfig(cfgFile)
 			if err != nil {
 				return fmt.Errorf("error loading config file: %w", err)
 			}
-
-			// Merge command line flags with config (flags take precedence)
-			cfg.MergeWithFlags(cmd.Flags())
 		} else {
-			// If no config file, create an empty config and load from environment and flags
+			// If no config file, create an empty config with defaults
 			cfg = createEmptyConfig()
-
-			// Set default log levels
 			cfg.LDAPEnforcer.MainLogLevel = "INFO"
 			cfg.LDAPEnforcer.LDAPLogLevel = "INFO"
-
-			// Load from environment variables
-			cfg.MergeWithEnv()
-
-			// Merge command line flags (flags take precedence over env vars)
-			cfg.MergeWithFlags(cmd.Flags())
 		}
+
+		// Apply configurations in order of increasing precedence:
+		// Config file was loaded first (or defaults if no config)
+		// Now apply: Environment variables (higher precedence than config)
+		cfg.MergeWithEnv()
+
+		// Finally, apply command line flags (highest precedence)
+		cfg.MergeWithFlags(cmd.Flags())
 
 		// Initialize main logging system
 		mainLogLevel := logging.InfoLevel // Default to INFO level

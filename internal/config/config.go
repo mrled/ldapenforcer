@@ -116,22 +116,14 @@ func LoadConfig(configFile string) (*Config, error) {
 	// Store the main config file path for monitoring
 	SetMainConfigFile(absConfigFile)
 
-	// Load the main config file
+	// Set defaults for the logging configuration (lowest precedence)
+	config.LDAPEnforcer.MainLogLevel = "INFO"
+	config.LDAPEnforcer.LDAPLogLevel = "INFO"
+
+	// Load the main config file (second lowest precedence)
 	err = config.loadConfigFile(configFile)
 	if err != nil {
 		return nil, err
-	}
-
-	// Load configuration from environment variables, overriding settings from the config file
-	config.MergeWithEnv()
-
-	// Set defaults for the logging configuration
-	if config.LDAPEnforcer.MainLogLevel == "" {
-		config.LDAPEnforcer.MainLogLevel = "INFO"
-	}
-
-	if config.LDAPEnforcer.LDAPLogLevel == "" {
-		config.LDAPEnforcer.LDAPLogLevel = config.LDAPEnforcer.MainLogLevel
 	}
 
 	return config, nil
