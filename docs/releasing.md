@@ -1,7 +1,7 @@
 # Releasing a new version
 
 ```sh
-version=$(go run ./... version -r); git tag v"$version" && git push origin v"$version"
+version=$(go run ./... version -r); git tag v"$version" && git push origin master v"$version"
 ```
 
 ## goreleaser
