@@ -137,10 +137,8 @@ var syncCmd = &cobra.Command{
 							fmt.Printf("Error during sync after config reload: %v\n", err)
 						}
 					} else {
-						// Optionally run sync even without config changes
-						if err := runSync(cfg, dryRun); err != nil {
-							fmt.Printf("Error during periodic sync: %v\n", err)
-						}
+						// Skip LDAP operations if configuration hasn't changed
+						logging.DefaultLogger.Trace("Config files haven't changed, skipping LDAP operations")
 					}
 				case <-sigChan:
 					fmt.Println("\nReceived interrupt signal, shutting down...")
