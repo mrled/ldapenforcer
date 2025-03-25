@@ -172,7 +172,3 @@ func createPersonDN(uid, enforcedPeopleOU string) string {
 func createSvcAcctDN(uid, enforcedSvcAcctOU string) string {
 	return "uid=" + uid + "," + enforcedSvcAcctOU
 }
-
-func createGroupDN(groupname, enforcedGroupOU string) string {
-	return "cn=" + groupname + "," + enforcedGroupOU
-}

@@ -55,7 +55,13 @@ func NewClient(cfg *config.Config) (*Client, error) {
 
 		// Connect with TLS
 		logging.LDAPProtocolLogger.Trace("Using custom TLS config with CA certificate from %s", caCertPath)
-		conn, err = ldap.DialURL(cfg.LDAPEnforcer.URI, ldap.DialWithTLSConfig(tlsConfig))
+		// Using a separate error variable to avoid shadowing
+		var dialErr error
+		conn, dialErr = ldap.DialURL(cfg.LDAPEnforcer.URI, ldap.DialWithTLSConfig(tlsConfig))
+		if dialErr != nil {
+			logging.LDAPProtocolLogger.Error("Failed to connect to LDAP server with TLS: %v", dialErr)
+			return nil, fmt.Errorf("failed to connect to LDAP server with TLS: %w", dialErr)
+		}
 	} else {
 		// Connect without TLS or with default TLS
 		logging.LDAPProtocolLogger.Debug("Dialing LDAP URL %s", cfg.LDAPEnforcer.URI)
@@ -77,7 +83,9 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		// Only close the connection if it was successfully established
 		if conn != nil {
 			logging.LDAPProtocolLogger.Debug("Closing LDAP connection due to password retrieval failure")
-			conn.Close()
+			if err := conn.Close(); err != nil {
+				logging.LDAPProtocolLogger.Warn("Error closing LDAP connection: %v", err)
+			}
 		}
 		return nil, fmt.Errorf("failed to get LDAP password: %w", err)
 	}
@@ -90,7 +98,9 @@ func NewClient(cfg *config.Config) (*Client, error) {
 		// Only close the connection if it was successfully established
 		if conn != nil {
 			logging.LDAPProtocolLogger.Debug("Closing LDAP connection due to bind failure")
-			conn.Close()
+			if err := conn.Close(); err != nil {
+				logging.LDAPProtocolLogger.Warn("Error closing LDAP connection: %v", err)
+			}
 		}
 		return nil, fmt.Errorf("failed to bind to LDAP server: %w", err)
 	}
@@ -106,7 +116,9 @@ func NewClient(cfg *config.Config) (*Client, error) {
 // Close closes the LDAP connection
 func (c *Client) Close() {
 	if c != nil && c.conn != nil {
-		c.conn.Close()
+		if err := c.conn.Close(); err != nil {
+			logging.LDAPProtocolLogger.Warn("Error closing LDAP connection: %v", err)
+		}
 	}
 }
 

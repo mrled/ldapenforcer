@@ -162,14 +162,30 @@ func TestMergeWithFlags(t *testing.T) {
 	AddFlags(flags)
 
 	// Set some flag values
-	flags.Set("ldap-uri", "ldap://flagtest.com")
-	flags.Set("bind-dn", "cn=flaguser,dc=example,dc=com")
-	flags.Set("password-command", "echo password")
-	flags.Set("password-command-via-shell", "true")
-	flags.Set("ca-cert-file", "/path/to/ca.crt")
-	flags.Set("enforced-people-ou", "ou=flag-managed,ou=people,dc=flagtest,dc=com")
-	flags.Set("enforced-svcacct-ou", "ou=flag-managed,ou=svcaccts,dc=flagtest,dc=com")
-	flags.Set("enforced-group-ou", "ou=flag-managed,ou=groups,dc=flagtest,dc=com")
+	if err := flags.Set("ldap-uri", "ldap://flagtest.com"); err != nil {
+		t.Fatalf("Failed to set ldap-uri flag: %v", err)
+	}
+	if err := flags.Set("bind-dn", "cn=flaguser,dc=example,dc=com"); err != nil {
+		t.Fatalf("Failed to set bind-dn flag: %v", err)
+	}
+	if err := flags.Set("password-command", "echo password"); err != nil {
+		t.Fatalf("Failed to set password-command flag: %v", err)
+	}
+	if err := flags.Set("password-command-via-shell", "true"); err != nil {
+		t.Fatalf("Failed to set password-command-via-shell flag: %v", err)
+	}
+	if err := flags.Set("ca-cert-file", "/path/to/ca.crt"); err != nil {
+		t.Fatalf("Failed to set ca-cert-file flag: %v", err)
+	}
+	if err := flags.Set("enforced-people-ou", "ou=flag-managed,ou=people,dc=flagtest,dc=com"); err != nil {
+		t.Fatalf("Failed to set enforced-people-ou flag: %v", err)
+	}
+	if err := flags.Set("enforced-svcacct-ou", "ou=flag-managed,ou=svcaccts,dc=flagtest,dc=com"); err != nil {
+		t.Fatalf("Failed to set enforced-svcacct-ou flag: %v", err)
+	}
+	if err := flags.Set("enforced-group-ou", "ou=flag-managed,ou=groups,dc=flagtest,dc=com"); err != nil {
+		t.Fatalf("Failed to set enforced-group-ou flag: %v", err)
+	}
 
 	// Merge with config
 	config.MergeWithFlags(flags)
@@ -404,25 +420,51 @@ func TestMergeWithEnv(t *testing.T) {
 	defer func() {
 		for k, v := range origVars {
 			if v == "" {
-				os.Unsetenv(k)
+				if err := os.Unsetenv(k); err != nil {
+					t.Fatalf("Failed to unset environment variable %s: %v", k, err)
+				}
 			} else {
-				os.Setenv(k, v)
+				if err := os.Setenv(k, v); err != nil {
+					t.Fatalf("Failed to set environment variable %s: %v", k, err)
+				}
 			}
 		}
 	}()
 
 	// Set test environment variables
-	os.Setenv("LDAPENFORCER_URI", "ldap://envtest.com")
-	os.Setenv("LDAPENFORCER_BIND_DN", "cn=envuser,dc=example,dc=com")
-	os.Setenv("LDAPENFORCER_PASSWORD", "env_password")
-	os.Setenv("LDAPENFORCER_PASSWORD_COMMAND_VIA_SHELL", "true")
-	os.Setenv("LDAPENFORCER_CA_CERT_FILE", "/path/from/env/ca.crt")
-	os.Setenv("LDAPENFORCER_LOG_LEVEL", "INFO")
-	os.Setenv("LDAPENFORCER_LDAP_LOG_LEVEL", "DEBUG")
-	os.Setenv("LDAPENFORCER_ENFORCED_PEOPLE_OU", "ou=env-managed,ou=people,dc=envtest,dc=com")
-	os.Setenv("LDAPENFORCER_ENFORCED_SVCACCT_OU", "ou=env-managed,ou=svcaccts,dc=envtest,dc=com")
-	os.Setenv("LDAPENFORCER_ENFORCED_GROUP_OU", "ou=env-managed,ou=groups,dc=envtest,dc=com")
-	os.Setenv("LDAPENFORCER_INCLUDES", "env1.toml, env2.toml")
+	if err := os.Setenv("LDAPENFORCER_URI", "ldap://envtest.com"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_URI: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_BIND_DN", "cn=envuser,dc=example,dc=com"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_BIND_DN: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_PASSWORD", "env_password"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_PASSWORD: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_PASSWORD_COMMAND_VIA_SHELL", "true"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_PASSWORD_COMMAND_VIA_SHELL: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_CA_CERT_FILE", "/path/from/env/ca.crt"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_CA_CERT_FILE: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_LOG_LEVEL", "INFO"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_LOG_LEVEL: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_LDAP_LOG_LEVEL", "DEBUG"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_LDAP_LOG_LEVEL: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_ENFORCED_PEOPLE_OU", "ou=env-managed,ou=people,dc=envtest,dc=com"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_ENFORCED_PEOPLE_OU: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_ENFORCED_SVCACCT_OU", "ou=env-managed,ou=svcaccts,dc=envtest,dc=com"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_ENFORCED_SVCACCT_OU: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_ENFORCED_GROUP_OU", "ou=env-managed,ou=groups,dc=envtest,dc=com"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_ENFORCED_GROUP_OU: %v", err)
+	}
+	if err := os.Setenv("LDAPENFORCER_INCLUDES", "env1.toml, env2.toml"); err != nil {
+		t.Fatalf("Failed to set LDAPENFORCER_INCLUDES: %v", err)
+	}
 
 	// Create a test config
 	config := &Config{}

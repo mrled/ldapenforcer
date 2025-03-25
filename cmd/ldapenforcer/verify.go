@@ -66,16 +66,6 @@ var verifyCmd = &cobra.Command{
 	},
 }
 
-// checkOU checks if an OU exists in LDAP
-func checkOU(client *ldap.Client, dn string) {
-	exists, _ := client.EntryExists(dn)
-	if exists {
-		fmt.Printf("✓ %s exists\n", dn)
-	} else {
-		fmt.Printf("✗ %s does not exist\n", dn)
-	}
-}
-
 // checkEntity checks if an entity exists in LDAP
 func checkEntity(client *ldap.Client, dn string, entityType string) {
 	exists, _ := client.EntryExists(dn)
