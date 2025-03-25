@@ -32,6 +32,32 @@ cd ldapenforcer
 go build
 ```
 
+### Development
+
+External requirements:
+
+* `golangci-lint`: for linting
+* `goreleaser` for making releases
+
+### Creating a new release
+
+```sh
+version=$(go run ./... version -r); git tag v"$version" && git push origin master v"$version"
+```
+
+We use goreleaser in GitHub actions.
+To run it locally for testing:
+
+```sh
+brew install goreleaser/tap/goreleaser
+
+# Build like the master branch
+goreleaser build --snapshot --clean
+
+# Build like the full release
+goreleaser release --snapshot --clean
+```
+
 ## Usage
 
 ```bash
