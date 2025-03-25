@@ -1,16 +1,16 @@
-name: Release
+name: Master Build
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - master
 
 permissions:
-  contents: write
+  contents: read
   packages: write
 
 jobs:
-  goreleaser:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,12 +30,19 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: Run GoReleaser
+      - name: Run GoReleaser (snapshot)
         uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest
-          # Creates a permanent GitHub release where artifacts are stored indefinitely
-          args: release --clean
+          args: build --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Create a temporary artifact that is stored for just `retention-days` days
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ldapenforcer-master
+          path: dist/*/ldapenforcer*
+          retention-days: 5
