@@ -1,7 +1,7 @@
 package version
 
 // Version is the current version of LDAPEnforcer
-const Version = "0.1.1"
+const Version = "0.1.2"
 
 // GetVersion returns the current version of LDAPEnforcer
 func GetVersion() string {
