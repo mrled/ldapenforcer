@@ -20,7 +20,7 @@ var (
 var RootCmd = &cobra.Command{
 	Use:   "ldapenforcer",
 	Short: "LDAPEnforcer is a tool for enforcing LDAP policies",
-	Long: `LDAPEnforcer is a command line tool for managing and 
+	Long: `LDAPEnforcer is a command line tool for managing and
 enforcing policies on LDAP directories.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Skip loading config for the version command
@@ -91,6 +91,14 @@ enforcing policies on LDAP directories.`,
 			logging.DefaultLogger.Debug("LDAP log level set to %s", logging.GetLevelName(ldapLogLevel))
 		}
 
+		// Print formatted configuration
+		logging.DefaultLogger.Debug("Configuration loaded: URI=%s, BindDN=%s, EnforcedPeopleOU=%s, EnforcedSvcAcctOU=%s, EnforcedGroupOU=%s, ConfigPollInterval=%d",
+			cfg.LDAPEnforcer.URI,
+			cfg.LDAPEnforcer.BindDN,
+			cfg.LDAPEnforcer.EnforcedPeopleOU,
+			cfg.LDAPEnforcer.EnforcedSvcAcctOU,
+			cfg.LDAPEnforcer.EnforcedGroupOU,
+			cfg.LDAPEnforcer.ConfigPollInterval)
 		return nil
 	},
 }
