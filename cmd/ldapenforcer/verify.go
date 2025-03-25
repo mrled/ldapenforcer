@@ -5,6 +5,7 @@ import (
 
 	ldapv3 "github.com/go-ldap/ldap/v3"
 	"github.com/mrled/ldapenforcer/internal/ldap"
+	"github.com/mrled/ldapenforcer/internal/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +30,13 @@ var verifyCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to create LDAP client: %w", err)
 		}
-		defer client.Close()
+
+		// Ensure connection is closed at the end of the operation
+		defer func() {
+			if closeErr := client.Close(); closeErr != nil {
+				logging.DefaultLogger.Warn("Error closing LDAP connection: %v", closeErr)
+			}
+		}()
 
 		// Check if LDAP is accessible
 		fmt.Println("Verifying LDAP connection...")
@@ -98,7 +105,13 @@ var verifyPersonCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to create LDAP client: %w", err)
 		}
-		defer client.Close()
+
+		// Ensure connection is closed at the end of the operation
+		defer func() {
+			if closeErr := client.Close(); closeErr != nil {
+				logging.DefaultLogger.Warn("Error closing LDAP connection: %v", closeErr)
+			}
+		}()
 
 		// Check if person exists
 		dn := client.PersonToDN(uid)

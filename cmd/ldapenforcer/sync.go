@@ -174,7 +174,13 @@ var syncPersonCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to create LDAP client: %w", err)
 		}
-		defer client.Close()
+
+		// Ensure connection is closed at the end of the operation
+		defer func() {
+			if closeErr := client.Close(); closeErr != nil {
+				logging.DefaultLogger.Warn("Error closing LDAP connection: %v", closeErr)
+			}
+		}()
 
 		// Ensure OUs exist
 		err = client.EnsureManagedOUsExist()
@@ -229,7 +235,13 @@ var syncSvcAcctCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to create LDAP client: %w", err)
 		}
-		defer client.Close()
+
+		// Ensure connection is closed at the end of the operation
+		defer func() {
+			if closeErr := client.Close(); closeErr != nil {
+				logging.DefaultLogger.Warn("Error closing LDAP connection: %v", closeErr)
+			}
+		}()
 
 		// Ensure OUs exist
 		err = client.EnsureManagedOUsExist()
@@ -284,7 +296,13 @@ var syncGroupCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to create LDAP client: %w", err)
 		}
-		defer client.Close()
+
+		// Ensure connection is closed at the end of the operation
+		defer func() {
+			if closeErr := client.Close(); closeErr != nil {
+				logging.DefaultLogger.Warn("Error closing LDAP connection: %v", closeErr)
+			}
+		}()
 
 		// Ensure OUs exist
 		err = client.EnsureManagedOUsExist()
@@ -341,7 +359,13 @@ func runSync(cfg *config.Config, dryRun bool) error {
 	if err != nil {
 		return fmt.Errorf("failed to create LDAP client: %w", err)
 	}
-	defer client.Close()
+
+	// Ensure connection is closed at the end of the operation
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			logging.DefaultLogger.Warn("Error closing LDAP connection: %v", closeErr)
+		}
+	}()
 
 	// Run the sync
 	if dryRun {

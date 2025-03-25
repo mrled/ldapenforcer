@@ -292,12 +292,15 @@ func NewClient(cfg *config.Config) (*Client, error) {
 }
 
 // Close closes the LDAP connection
-func (c *Client) Close() {
+func (c *Client) Close() error {
 	if c != nil && c.conn != nil {
 		if err := c.conn.Close(); err != nil {
 			logging.LDAPProtocolLogger.Warn("Error closing LDAP connection: %v", err)
+			return fmt.Errorf("error closing LDAP connection: %w", err)
 		}
+		logging.LDAPProtocolLogger.Debug("LDAP connection closed successfully")
 	}
+	return nil
 }
 
 // Search performs an LDAP search
