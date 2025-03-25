@@ -29,33 +29,15 @@ password = "admin_password"
 # ca_cert_file = "certs/ca.crt"  # Relative to config file
 #
 # NOTE: All configuration settings can also be set via environment variables.
-# Environment variable names are in the format LDAPENFORCER_<SETTING_NAME>, 
+# Environment variable names are in the format LDAPENFORCER_<SETTING_NAME>,
 # for example:
 #   - LDAPENFORCER_URI
 #   - LDAPENFORCER_BIND_DN
 #   - LDAPENFORCER_PASSWORD
 #   - LDAPENFORCER_LOG_LEVEL
-#   - LDAPENFORCER_LDAP_LOG_LEVEL 
+#   - LDAPENFORCER_LDAP_LOG_LEVEL
 #   - LDAPENFORCER_PEOPLE_BASE_DN
 # Environment variables take precedence over config file settings.
-
-# Logging configuration
-[ldapenforcer.logging]
-# Main application log level
-# Valid values: ERROR, WARN, INFO, DEBUG, TRACE (case-insensitive)
-# ERROR: Only error messages (default)
-# WARN: Warnings and errors
-# INFO: Informational messages, warnings, and errors
-# DEBUG: Debug messages and all above
-# TRACE: Trace messages (extremely verbose) and all above
-level = "ERROR"
-
-# LDAP-specific logging configuration
-[ldapenforcer.logging.ldap]
-# LDAP-specific log level (can be different from main log level)
-# Use DEBUG or TRACE level to enable detailed LDAP protocol logging
-# without increasing verbosity of other application logs.
-level = "ERROR"
 
 # Directory Structure
 # Full OU for enforced people (required)
@@ -75,6 +57,24 @@ config_poll_interval = 0
 # Include files - paths are relative to this config file's directory
 # unless they are absolute paths
 includes = [
-  # "additional-config.toml",
-  # "/absolute/path/to/config.toml"
+    # "additional-config.toml",
+    # "/absolute/path/to/config.toml"
 ]
+
+# Logging configuration
+[ldapenforcer.logging]
+# Main application log level
+# Valid values: ERROR, WARN, INFO, DEBUG, TRACE (case-insensitive)
+# ERROR: Only error messages (default)
+# WARN: Warnings and errors
+# INFO: Informational messages, warnings, and errors
+# DEBUG: Debug messages and all above
+# TRACE: Trace messages (extremely verbose) and all above
+level = "ERROR"
+
+# LDAP-specific logging configuration
+[ldapenforcer.logging.ldap]
+# LDAP-specific log level (can be different from main log level)
+# Use DEBUG or TRACE level to enable detailed LDAP protocol logging
+# without increasing verbosity of other application logs.
+level = "ERROR"
