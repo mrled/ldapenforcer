@@ -13,5 +13,5 @@ enforced_group_ou = "ou=managed,ou=groups,dc=example,dc=com"
 includes = ["includes/additional.toml"]
 
 # Logging configuration
-[ldapenforcer.logging]
-level = "INFO"
+main_log_level = "INFO"
+ldap_log_level = "INFO"

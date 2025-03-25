@@ -48,8 +48,11 @@ type LDAPEnforcerConfig struct {
 	// Path to CA certificate file for LDAPS
 	CACertFile string `toml:"ca_cert_file"`
 
-	// Logging configuration
-	Logging LoggingConfig `toml:"logging"`
+	// Main log level (ERROR, WARN, INFO, DEBUG, TRACE)
+	MainLogLevel string `toml:"main_log_level"`
+
+	// LDAP-specific log level (ERROR, WARN, INFO, DEBUG, TRACE)
+	LDAPLogLevel string `toml:"ldap_log_level"`
 
 	// Full OU for enforced people
 	EnforcedPeopleOU string `toml:"enforced_people_ou"`
@@ -123,12 +126,12 @@ func LoadConfig(configFile string) (*Config, error) {
 	config.MergeWithEnv()
 
 	// Set defaults for the logging configuration
-	if config.LDAPEnforcer.Logging.Level == "" {
-		config.LDAPEnforcer.Logging.Level = "INFO"
+	if config.LDAPEnforcer.MainLogLevel == "" {
+		config.LDAPEnforcer.MainLogLevel = "INFO"
 	}
 
-	if config.LDAPEnforcer.Logging.LDAP.Level == "" {
-		config.LDAPEnforcer.Logging.LDAP.Level = config.LDAPEnforcer.Logging.Level
+	if config.LDAPEnforcer.LDAPLogLevel == "" {
+		config.LDAPEnforcer.LDAPLogLevel = config.LDAPEnforcer.MainLogLevel
 	}
 
 	return config, nil
@@ -210,11 +213,11 @@ func (c *Config) merge(other *Config) {
 		c.LDAPEnforcer.CACertFile = other.LDAPEnforcer.CACertFile
 	}
 	// Handle the logging structure
-	if other.LDAPEnforcer.Logging.Level != "" {
-		c.LDAPEnforcer.Logging.Level = other.LDAPEnforcer.Logging.Level
+	if other.LDAPEnforcer.MainLogLevel != "" {
+		c.LDAPEnforcer.MainLogLevel = other.LDAPEnforcer.MainLogLevel
 	}
-	if other.LDAPEnforcer.Logging.LDAP.Level != "" {
-		c.LDAPEnforcer.Logging.LDAP.Level = other.LDAPEnforcer.Logging.LDAP.Level
+	if other.LDAPEnforcer.LDAPLogLevel != "" {
+		c.LDAPEnforcer.LDAPLogLevel = other.LDAPEnforcer.LDAPLogLevel
 	}
 	if other.LDAPEnforcer.EnforcedPeopleOU != "" {
 		c.LDAPEnforcer.EnforcedPeopleOU = other.LDAPEnforcer.EnforcedPeopleOU
@@ -499,10 +502,10 @@ func (c *Config) MergeWithEnv() {
 
 	// Logging configuration
 	if val := os.Getenv("LDAPENFORCER_LOG_LEVEL"); val != "" {
-		c.LDAPEnforcer.Logging.Level = val
+		c.LDAPEnforcer.MainLogLevel = val
 	}
 	if val := os.Getenv("LDAPENFORCER_LDAP_LOG_LEVEL"); val != "" {
-		c.LDAPEnforcer.Logging.LDAP.Level = val
+		c.LDAPEnforcer.LDAPLogLevel = val
 	}
 
 	// Directory structure
@@ -575,10 +578,10 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 		c.LDAPEnforcer.CACertFile = caCertFile
 	}
 	if logLevel, _ := flags.GetString("log-level"); logLevel != "" {
-		c.LDAPEnforcer.Logging.Level = logLevel
+		c.LDAPEnforcer.MainLogLevel = logLevel
 	}
 	if ldapLogLevel, _ := flags.GetString("ldap-log-level"); ldapLogLevel != "" {
-		c.LDAPEnforcer.Logging.LDAP.Level = ldapLogLevel
+		c.LDAPEnforcer.LDAPLogLevel = ldapLogLevel
 	}
 	if enforcedPeopleOU, _ := flags.GetString("enforced-people-ou"); enforcedPeopleOU != "" {
 		c.LDAPEnforcer.EnforcedPeopleOU = enforcedPeopleOU

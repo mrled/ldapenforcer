@@ -38,16 +38,13 @@ password = "admin_password"
 # Environment variables take precedence over config file settings.
 
 # Logging configuration
-[ldapenforcer.logging]
 # Main application log level
 # Valid values: ERROR, WARN, INFO, DEBUG, TRACE (case-insensitive)
-level = "ERROR"
+main_log_level = "ERROR"
 
-# LDAP-specific logging configuration
-[ldapenforcer.logging.ldap]
 # LDAP-specific log level - control LDAP protocol logging independently
 # Use DEBUG or TRACE level for detailed protocol logging
-level = "ERROR"
+ldap_log_level = "ERROR"
 
 # Directory Structure
 enforced_people_ou = "ou=enforced,ou=people,dc=example,dc=com"

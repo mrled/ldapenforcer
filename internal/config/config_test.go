@@ -32,8 +32,8 @@ func TestLoadConfig(t *testing.T) {
 	if config.LDAPEnforcer.Password != "admin_password" {
 		t.Errorf("Expected Password 'admin_password', got '%s'", config.LDAPEnforcer.Password)
 	}
-	if config.LDAPEnforcer.Logging.Level != "INFO" {
-		t.Errorf("Expected Logging.Level 'INFO', got '%s'", config.LDAPEnforcer.Logging.Level)
+	if config.LDAPEnforcer.MainLogLevel != "INFO" {
+		t.Errorf("Expected MainLogLevel 'INFO', got '%s'", config.LDAPEnforcer.MainLogLevel)
 	}
 	// Check values of enforced OUs
 	// EnforcedPeopleOU should be overridden by the includes
@@ -494,11 +494,11 @@ func TestMergeWithEnv(t *testing.T) {
 	if config.LDAPEnforcer.CACertFile != "/path/from/env/ca.crt" {
 		t.Errorf("Expected CACertFile '/path/from/env/ca.crt', got '%s'", config.LDAPEnforcer.CACertFile)
 	}
-	if config.LDAPEnforcer.Logging.Level != "INFO" {
-		t.Errorf("Expected Logging.Level 'INFO', got '%s'", config.LDAPEnforcer.Logging.Level)
+	if config.LDAPEnforcer.MainLogLevel != "INFO" {
+		t.Errorf("Expected MainLogLevel 'INFO', got '%s'", config.LDAPEnforcer.MainLogLevel)
 	}
-	if config.LDAPEnforcer.Logging.LDAP.Level != "DEBUG" {
-		t.Errorf("Expected Logging.LDAP.Level 'DEBUG', got '%s'", config.LDAPEnforcer.Logging.LDAP.Level)
+	if config.LDAPEnforcer.LDAPLogLevel != "DEBUG" {
+		t.Errorf("Expected LDAPLogLevel 'DEBUG', got '%s'", config.LDAPEnforcer.LDAPLogLevel)
 	}
 	if config.LDAPEnforcer.EnforcedPeopleOU != "ou=env-managed,ou=people,dc=envtest,dc=com" {
 		t.Errorf("Expected EnforcedPeopleOU 'ou=env-managed,ou=people,dc=envtest,dc=com', got '%s'", config.LDAPEnforcer.EnforcedPeopleOU)

@@ -44,8 +44,8 @@ enforcing policies on LDAP directories.`,
 			cfg = createEmptyConfig()
 
 			// Set default log levels
-			cfg.LDAPEnforcer.Logging.Level = "INFO"
-			cfg.LDAPEnforcer.Logging.LDAP.Level = "INFO"
+			cfg.LDAPEnforcer.MainLogLevel = "INFO"
+			cfg.LDAPEnforcer.LDAPLogLevel = "INFO"
 
 			// Load from environment variables
 			cfg.MergeWithEnv()
@@ -58,12 +58,12 @@ enforcing policies on LDAP directories.`,
 		mainLogLevel := logging.InfoLevel // Default to INFO level
 
 		// Configure logging from the configuration
-		if cfg.LDAPEnforcer.Logging.Level != "" {
-			level, err := logging.ParseLevel(cfg.LDAPEnforcer.Logging.Level)
+		if cfg.LDAPEnforcer.MainLogLevel != "" {
+			level, err := logging.ParseLevel(cfg.LDAPEnforcer.MainLogLevel)
 			if err == nil {
 				mainLogLevel = level
 			} else {
-				fmt.Fprintf(os.Stderr, "Warning: Invalid main log level '%s', using INFO level instead\n", cfg.LDAPEnforcer.Logging.Level)
+				fmt.Fprintf(os.Stderr, "Warning: Invalid main log level '%s', using INFO level instead\n", cfg.LDAPEnforcer.MainLogLevel)
 			}
 		}
 
@@ -75,12 +75,12 @@ enforcing policies on LDAP directories.`,
 		ldapLogLevel := mainLogLevel
 
 		// If LDAP-specific level is configured, use it instead
-		if cfg.LDAPEnforcer.Logging.LDAP.Level != "" {
-			level, err := logging.ParseLevel(cfg.LDAPEnforcer.Logging.LDAP.Level)
+		if cfg.LDAPEnforcer.LDAPLogLevel != "" {
+			level, err := logging.ParseLevel(cfg.LDAPEnforcer.LDAPLogLevel)
 			if err == nil {
 				ldapLogLevel = level
 			} else {
-				fmt.Fprintf(os.Stderr, "Warning: Invalid LDAP log level '%s', using main log level instead\n", cfg.LDAPEnforcer.Logging.LDAP.Level)
+				fmt.Fprintf(os.Stderr, "Warning: Invalid LDAP log level '%s', using main log level instead\n", cfg.LDAPEnforcer.LDAPLogLevel)
 			}
 		}
 
@@ -112,9 +112,6 @@ func createEmptyConfig() *config.Config {
 			SvcAcct:  make(map[string]*model.SvcAcct),
 			Group:    make(map[string]*model.Group),
 			Includes: make([]string, 0),
-			Logging: config.LoggingConfig{
-				LDAP: config.LDAPLoggingConfig{},
-			},
 		},
 	}
 

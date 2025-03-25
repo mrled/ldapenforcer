@@ -105,8 +105,8 @@ var syncCmd = &cobra.Command{
 						newCfg.MergeWithFlags(cmd.Flags())
 
 						// Set log levels from the new config
-						if newCfg.LDAPEnforcer.Logging.Level != "" {
-							level, err := logging.ParseLevel(newCfg.LDAPEnforcer.Logging.Level)
+						if newCfg.LDAPEnforcer.MainLogLevel != "" {
+							level, err := logging.ParseLevel(newCfg.LDAPEnforcer.MainLogLevel)
 							if err == nil {
 								logging.DefaultLogger.SetLevel(level)
 								logging.DefaultLogger.Debug("Main log level set to %s", logging.GetLevelName(level))
@@ -114,8 +114,8 @@ var syncCmd = &cobra.Command{
 						}
 
 						// Set LDAP log level
-						if newCfg.LDAPEnforcer.Logging.LDAP.Level != "" {
-							level, err := logging.ParseLevel(newCfg.LDAPEnforcer.Logging.LDAP.Level)
+						if newCfg.LDAPEnforcer.LDAPLogLevel != "" {
+							level, err := logging.ParseLevel(newCfg.LDAPEnforcer.LDAPLogLevel)
 							if err == nil {
 								logging.LDAPProtocolLogger.SetLevel(level)
 								logging.DefaultLogger.Debug("LDAP log level set to %s", logging.GetLevelName(level))

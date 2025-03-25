@@ -62,7 +62,6 @@ includes = [
 ]
 
 # Logging configuration
-[ldapenforcer.logging]
 # Main application log level
 # Valid values: ERROR, WARN, INFO, DEBUG, TRACE (case-insensitive)
 # ERROR: Only error messages (default)
@@ -70,11 +69,9 @@ includes = [
 # INFO: Informational messages, warnings, and errors
 # DEBUG: Debug messages and all above
 # TRACE: Trace messages (extremely verbose) and all above
-level = "ERROR"
+main_log_level = "ERROR"
 
-# LDAP-specific logging configuration
-[ldapenforcer.logging.ldap]
 # LDAP-specific log level (can be different from main log level)
 # Use DEBUG or TRACE level to enable detailed LDAP protocol logging
 # without increasing verbosity of other application logs.
-level = "ERROR"
+ldap_log_level = "ERROR"
