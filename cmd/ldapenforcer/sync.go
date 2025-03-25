@@ -53,14 +53,32 @@ var syncCmd = &cobra.Command{
 			ticker := time.NewTicker(time.Duration(pollInterval) * time.Second)
 			defer ticker.Stop()
 
-			// Run first sync immediately
-			if err := runSync(cfg, dryRun); err != nil {
-				fmt.Printf("Error during initial sync: %v\n", err)
-			}
-
 			// Setup signal handling for graceful shutdown
 			sigChan := make(chan os.Signal, 1)
 			signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+			// Run first sync immediately - retry like we do in polling mode
+			for {
+				err := runSync(cfg, dryRun)
+				if err != nil {
+					fmt.Printf("Error during initial sync: %v\n", err)
+					fmt.Printf("Retrying in %d seconds...\n", pollInterval)
+
+					// Wait for either the retry interval or a signal
+					select {
+					case <-time.After(time.Duration(pollInterval) * time.Second):
+						// Continue with retry
+						continue
+					case sig := <-sigChan:
+						// User pressed Ctrl+C
+						fmt.Printf("\nReceived signal %v during retry wait, shutting down...\n", sig)
+						return nil
+					}
+				} else {
+					// Successfully connected and synced
+					break
+				}
+			}
 
 			// Main polling loop
 			for {
