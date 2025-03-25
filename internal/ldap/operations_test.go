@@ -186,7 +186,9 @@ func TestGetGroupAttributes(t *testing.T) {
 	}
 
 	client := &Client{
-		config: testConfig,
+		BaseClient: BaseClient{
+			config: testConfig,
+		},
 	}
 
 	// Test a simple group

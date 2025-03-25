@@ -11,12 +11,188 @@ import (
 	"github.com/go-ldap/ldap/v3"
 	"github.com/mrled/ldapenforcer/internal/config"
 	"github.com/mrled/ldapenforcer/internal/logging"
+	"github.com/mrled/ldapenforcer/internal/model"
 )
 
-// Client represents an LDAP client
-type Client struct {
-	conn   *ldap.Conn
+// LDAPClientInterface defines the interface that both real and mock LDAP clients implement
+type LDAPClientInterface interface {
+	// Connection management
+	Close() error
+
+	// DN generation
+	PersonToDN(uid string) string
+	SvcAcctToDN(uid string) string
+	GroupToDN(groupname string) string
+
+	// Basic LDAP operations
+	EntryExists(dn string) (bool, error)
+	CreateEntry(dn string, attrs map[string][]string) error
+	ModifyEntry(dn string, attrs map[string][]string, modType int) error
+	DeleteEntry(dn string) error
+	GetExistingEntries(ou string, entryType string) (map[string]string, error)
+
+	// OU management
+	EnsureManagedOUsExist() error
+	EnsureOUExists(ou string) error
+
+	// Sync operations
+	SyncPerson(uid string, person *model.Person) error
+	SyncSvcAcct(uid string, svcacct *model.SvcAcct) error
+	SyncGroup(groupname string, group *model.Group) error
+	SyncAll() error
+
+	// Dependency resolution for internal implementation
+	getGroupDependencies(groupname string, processedGroups map[string]bool) ([]string, []string)
+	topologicalSortGroups(deps map[string][]string) []string
+}
+
+// BaseClient implements shared functionality across real and mock clients
+type BaseClient struct {
 	config *config.Config
+}
+
+// PersonToDN converts a person UID to a DN
+func (b *BaseClient) PersonToDN(uid string) string {
+	return fmt.Sprintf("uid=%s,%s",
+		ldap.EscapeFilter(uid),
+		b.config.LDAPEnforcer.EnforcedPeopleOU)
+}
+
+// SvcAcctToDN converts a service account UID to a DN
+func (b *BaseClient) SvcAcctToDN(uid string) string {
+	return fmt.Sprintf("uid=%s,%s",
+		ldap.EscapeFilter(uid),
+		b.config.LDAPEnforcer.EnforcedSvcAcctOU)
+}
+
+// GroupToDN converts a group name to a DN
+func (b *BaseClient) GroupToDN(groupname string) string {
+	return fmt.Sprintf("cn=%s,%s",
+		ldap.EscapeFilter(groupname),
+		b.config.LDAPEnforcer.EnforcedGroupOU)
+}
+
+// getGroupDependencies returns a list of groups that this group depends on
+// and a list of unresolvable member UIDs
+func (b *BaseClient) getGroupDependencies(groupname string, processedGroups map[string]bool) ([]string, []string) {
+	// Mark this group as visited to avoid infinite recursion
+	processedGroups[groupname] = true
+
+	// Get the group
+	group, ok := b.config.LDAPEnforcer.Group[groupname]
+	if !ok {
+		return nil, nil
+	}
+
+	// Track dependencies and unresolvable members
+	var dependencies []string
+	var unresolvableMembers []string
+
+	// Check people members
+	for _, uid := range group.People {
+		if _, ok := b.config.LDAPEnforcer.Person[uid]; !ok {
+			unresolvableMembers = append(unresolvableMembers, uid)
+		}
+	}
+
+	// Check service account members
+	for _, uid := range group.SvcAccts {
+		if _, ok := b.config.LDAPEnforcer.SvcAcct[uid]; !ok {
+			unresolvableMembers = append(unresolvableMembers, uid)
+		}
+	}
+
+	// Check group members and recursively build dependencies
+	for _, nestedGroupName := range group.Groups {
+		// Add as dependency
+		dependencies = append(dependencies, nestedGroupName)
+
+		// If we haven't processed this nested group yet, get its dependencies too
+		if !processedGroups[nestedGroupName] {
+			nestedDeps, nestedUnres := b.getGroupDependencies(nestedGroupName, processedGroups)
+			dependencies = append(dependencies, nestedDeps...)
+			unresolvableMembers = append(unresolvableMembers, nestedUnres...)
+		}
+	}
+
+	return dependencies, unresolvableMembers
+}
+
+// topologicalSortGroups returns a slice of group names in topological order
+func (b *BaseClient) topologicalSortGroups(deps map[string][]string) []string {
+	// First, get all groups (including those with no dependencies)
+	allGroups := make(map[string]bool)
+	for groupname := range b.config.LDAPEnforcer.Group {
+		allGroups[groupname] = true
+	}
+	for groupname, groupDeps := range deps {
+		allGroups[groupname] = true
+		for _, dep := range groupDeps {
+			allGroups[dep] = true
+		}
+	}
+
+	// Now, build a proper adjacency list from the dependencies
+	graph := make(map[string][]string)
+	for group := range allGroups {
+		graph[group] = []string{}
+	}
+	for group, groupDeps := range deps {
+		// Add all dependencies at once
+		graph[group] = append(graph[group], groupDeps...)
+	}
+
+	// Perform topological sort
+	visited := make(map[string]bool)
+	temp := make(map[string]bool) // For cycle detection
+	var order []string
+
+	// Visit function for DFS
+	var visit func(string)
+	visit = func(node string) {
+		// If we've already processed this node, skip
+		if visited[node] {
+			return
+		}
+
+		// If we're currently processing this node, we have a cycle
+		if temp[node] {
+			// We have a cycle, but we should still proceed
+			logging.DefaultLogger.Warn("Cyclic dependency detected involving group: %s", node)
+			return
+		}
+
+		temp[node] = true
+
+		// Visit all dependencies before adding this node
+		for _, dep := range graph[node] {
+			visit(dep)
+		}
+
+		temp[node] = false
+		visited[node] = true
+		order = append(order, node)
+	}
+
+	// Visit each node
+	for node := range graph {
+		if !visited[node] {
+			visit(node)
+		}
+	}
+
+	// Reverse the order to get dependencies first
+	for i, j := 0, len(order)-1; i < j; i, j = i+1, j-1 {
+		order[i], order[j] = order[j], order[i]
+	}
+
+	return order
+}
+
+// Client represents a real LDAP client that connects to an LDAP server
+type Client struct {
+	BaseClient
+	conn *ldap.Conn
 }
 
 // NewClient creates a new LDAP client
@@ -108,8 +284,10 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	logging.LDAPProtocolLogger.Trace("Successfully authenticated to LDAP server")
 
 	return &Client{
-		conn:   conn,
-		config: cfg,
+		BaseClient: BaseClient{
+			config: cfg,
+		},
+		conn: conn,
 	}, nil
 }
 

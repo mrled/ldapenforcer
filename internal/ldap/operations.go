@@ -9,26 +9,7 @@ import (
 	"github.com/mrled/ldapenforcer/internal/model"
 )
 
-// PersonToDN converts a person UID to a DN
-func (c *Client) PersonToDN(uid string) string {
-	return fmt.Sprintf("uid=%s,%s",
-		ldap.EscapeFilter(uid),
-		c.config.LDAPEnforcer.EnforcedPeopleOU)
-}
-
-// SvcAcctToDN converts a service account UID to a DN
-func (c *Client) SvcAcctToDN(uid string) string {
-	return fmt.Sprintf("uid=%s,%s",
-		ldap.EscapeFilter(uid),
-		c.config.LDAPEnforcer.EnforcedSvcAcctOU)
-}
-
-// GroupToDN converts a group name to a DN
-func (c *Client) GroupToDN(groupname string) string {
-	return fmt.Sprintf("cn=%s,%s",
-		ldap.EscapeFilter(groupname),
-		c.config.LDAPEnforcer.EnforcedGroupOU)
-}
+// These DN methods are now provided by BaseClient
 
 // GetPersonAttributes converts a Person to LDAP attributes
 func GetPersonAttributes(person *model.Person) map[string][]string {
