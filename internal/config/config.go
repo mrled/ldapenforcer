@@ -63,6 +63,9 @@ type LDAPEnforcerConfig struct {
 	// Full OU for enforced groups
 	EnforcedGroupOU string `toml:"enforced_group_ou"`
 
+	// Interval for polling config file changes (when poll is enabled via command line)
+	PollConfigInterval string `toml:"poll_config_interval"`
+
 	// List of config files to include
 	Includes []string `toml:"includes"`
 
@@ -116,6 +119,7 @@ func LoadConfig(configFile string) (*Config, error) {
 	// Set defaults for the logging configuration (lowest precedence)
 	config.LDAPEnforcer.MainLogLevel = "INFO"
 	config.LDAPEnforcer.LDAPLogLevel = "INFO"
+	config.LDAPEnforcer.PollConfigInterval = "10s"
 
 	// Load the main config file (second lowest precedence)
 	err = config.loadConfigFile(configFile)
@@ -216,6 +220,9 @@ func (c *Config) merge(other *Config) {
 	}
 	if other.LDAPEnforcer.EnforcedGroupOU != "" {
 		c.LDAPEnforcer.EnforcedGroupOU = other.LDAPEnforcer.EnforcedGroupOU
+	}
+	if other.LDAPEnforcer.PollConfigInterval != "" {
+		c.LDAPEnforcer.PollConfigInterval = other.LDAPEnforcer.PollConfigInterval
 	}
 
 	// Make sure we also append any includes
@@ -508,6 +515,11 @@ func (c *Config) MergeWithEnv() {
 		c.LDAPEnforcer.EnforcedGroupOU = val
 	}
 
+	// Polling configuration
+	if val := os.Getenv("LDAPENFORCER_POLL_CONFIG_INTERVAL"); val != "" {
+		c.LDAPEnforcer.PollConfigInterval = val
+	}
+
 	// Includes - process as comma-separated list
 	if val := os.Getenv("LDAPENFORCER_INCLUDES"); val != "" {
 		includes := strings.Split(val, ",")
@@ -533,6 +545,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("enforced-people-ou", "", "Full OU for enforced people")
 	flags.String("enforced-svcacct-ou", "", "Full OU for enforced service accounts")
 	flags.String("enforced-group-ou", "", "Full OU for enforced groups")
+	flags.String("poll-config-interval", "10s", "Interval for --poll mode to check if the config file has changed and sync if so (recommended: 10s)")
 }
 
 // MergeWithFlags merges command line flag values into the config
@@ -572,6 +585,9 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	}
 	if enforcedGroupOU, _ := flags.GetString("enforced-group-ou"); enforcedGroupOU != "" {
 		c.LDAPEnforcer.EnforcedGroupOU = enforcedGroupOU
+	}
+	if pollConfigInterval, _ := flags.GetString("poll-config-interval"); pollConfigInterval != "" {
+		c.LDAPEnforcer.PollConfigInterval = pollConfigInterval
 	}
 }
 

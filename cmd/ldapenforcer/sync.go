@@ -30,27 +30,34 @@ var syncCmd = &cobra.Command{
 		}
 
 		// Get command flags
-		pollInterval, _ := cmd.Flags().GetInt("poll-config")
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		pollEnabled, _ := cmd.Flags().GetBool("poll")
+		pollConfigIntervalStr, _ := cmd.Flags().GetString("poll-config-interval")
 
 		// If polling is enabled, run continuously
-		if pollInterval > 0 {
-			// Limit minimum poll interval
-			if pollInterval < 1 {
+		if pollEnabled {
+			// Parse the polling interval
+			pollInterval, err := time.ParseDuration(pollConfigIntervalStr)
+			if err != nil {
+				return fmt.Errorf("invalid poll-config-interval: %w", err)
+			}
+
+			// Enforce minimum poll interval
+			if pollInterval < time.Second {
 				fmt.Println("Warning: Minimum poll interval is 1 second, using 1 second")
-				pollInterval = 1
+				pollInterval = time.Second
 			}
 
 			// Initialize file monitoring
-			err := config.InitConfigFileMonitoring(cfg)
+			err = config.InitConfigFileMonitoring(cfg)
 			if err != nil {
 				return fmt.Errorf("failed to initialize config file monitoring: %w", err)
 			}
 
-			fmt.Printf("Starting continuous sync with polling interval of %d seconds\n", pollInterval)
+			fmt.Printf("Starting continuous sync with polling interval of %s\n", pollInterval)
 			fmt.Println("Press Ctrl+C to stop")
 
-			ticker := time.NewTicker(time.Duration(pollInterval) * time.Second)
+			ticker := time.NewTicker(pollInterval)
 			defer ticker.Stop()
 
 			// Setup signal handling for graceful shutdown
@@ -62,11 +69,11 @@ var syncCmd = &cobra.Command{
 				err := runSync(cfg, dryRun)
 				if err != nil {
 					fmt.Printf("Error during initial sync: %v\n", err)
-					fmt.Printf("Retrying in %d seconds...\n", pollInterval)
+					fmt.Printf("Retrying in %s...\n", pollInterval)
 
 					// Wait for either the retry interval or a signal
 					select {
-					case <-time.After(time.Duration(pollInterval) * time.Second):
+					case <-time.After(pollInterval):
 						// Continue with retry
 						continue
 					case sig := <-sigChan:
@@ -393,7 +400,8 @@ func init() {
 
 	// Add flags
 	syncCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
-	syncCmd.Flags().Int("poll-config", 0, "Interval in seconds to check for config changes and synchronize (recommended: 10 or more)")
+	syncCmd.Flags().Bool("poll", false, "Enable polling mode to continuously check for config changes")
+	syncCmd.Flags().String("poll-config-interval", "10s", "Interval for --poll mode to check if the config file has changed and sync if so (recommended: \"10s\")")
 	syncPersonCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncSvcAcctCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncGroupCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
