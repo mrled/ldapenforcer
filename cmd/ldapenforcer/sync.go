@@ -104,6 +104,24 @@ var syncCmd = &cobra.Command{
 						// Merge with command line flags
 						newCfg.MergeWithFlags(cmd.Flags())
 
+						// Set log levels from the new config
+						if newCfg.LDAPEnforcer.Logging.Level != "" {
+							level, err := logging.ParseLevel(newCfg.LDAPEnforcer.Logging.Level)
+							if err == nil {
+								logging.DefaultLogger.SetLevel(level)
+								logging.DefaultLogger.Debug("Main log level set to %s", logging.GetLevelName(level))
+							}
+						}
+
+						// Set LDAP log level
+						if newCfg.LDAPEnforcer.Logging.LDAP.Level != "" {
+							level, err := logging.ParseLevel(newCfg.LDAPEnforcer.Logging.LDAP.Level)
+							if err == nil {
+								logging.LDAPProtocolLogger.SetLevel(level)
+								logging.DefaultLogger.Debug("LDAP log level set to %s", logging.GetLevelName(level))
+							}
+						}
+
 						// Update the global config
 						cfg = newCfg
 

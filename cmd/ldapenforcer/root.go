@@ -63,7 +63,7 @@ enforcing policies on LDAP directories.`,
 			if err == nil {
 				mainLogLevel = level
 			} else {
-				fmt.Fprintf(os.Stderr, "Warning: Invalid main log level '%s', using ERROR level instead\n", cfg.LDAPEnforcer.Logging.Level)
+				fmt.Fprintf(os.Stderr, "Warning: Invalid main log level '%s', using INFO level instead\n", cfg.LDAPEnforcer.Logging.Level)
 			}
 		}
 
