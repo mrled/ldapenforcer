@@ -30,7 +30,7 @@ var syncCmd = &cobra.Command{
 		}
 
 		// Get command flags
-		pollInterval, _ := cmd.Flags().GetInt("poll")
+		pollInterval, _ := cmd.Flags().GetInt("poll-config")
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 		// If polling is enabled, run continuously
@@ -393,7 +393,7 @@ func init() {
 
 	// Add flags
 	syncCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
-	syncCmd.Flags().Int("poll", 0, "Interval in seconds to check for config changes and synchronize (recommended: 10 or more)")
+	syncCmd.Flags().Int("poll-config", 0, "Interval in seconds to check for config changes and synchronize (recommended: 10 or more)")
 	syncPersonCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncSvcAcctCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncGroupCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")

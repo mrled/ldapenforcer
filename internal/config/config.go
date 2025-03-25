@@ -533,7 +533,6 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("enforced-people-ou", "", "Full OU for enforced people")
 	flags.String("enforced-svcacct-ou", "", "Full OU for enforced service accounts")
 	flags.String("enforced-group-ou", "", "Full OU for enforced groups")
-	flags.Int("poll", 0, "Interval in seconds to check for config changes and synchronize (recommended: 10 or more)")
 }
 
 // MergeWithFlags merges command line flag values into the config
