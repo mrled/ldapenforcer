@@ -29,8 +29,8 @@ var syncCmd = &cobra.Command{
 			return fmt.Errorf("configuration is invalid: %w", err)
 		}
 
-		// Check if we should run in polling mode
-		pollInterval := cfg.LDAPEnforcer.ConfigPollInterval
+		// Get command flags
+		pollInterval, _ := cmd.Flags().GetInt("poll")
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 		// If polling is enabled, run continuously
@@ -47,7 +47,7 @@ var syncCmd = &cobra.Command{
 				return fmt.Errorf("failed to initialize config file monitoring: %w", err)
 			}
 
-			fmt.Printf("Starting continuous sync with config poll interval of %d seconds\n", pollInterval)
+			fmt.Printf("Starting continuous sync with polling interval of %d seconds\n", pollInterval)
 			fmt.Println("Press Ctrl+C to stop")
 
 			ticker := time.NewTicker(time.Duration(pollInterval) * time.Second)
@@ -393,6 +393,7 @@ func init() {
 
 	// Add flags
 	syncCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
+	syncCmd.Flags().Int("poll", 0, "Interval in seconds to check for config changes and synchronize (recommended: 10 or more)")
 	syncPersonCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncSvcAcctCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncGroupCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")

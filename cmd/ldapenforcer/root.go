@@ -89,13 +89,12 @@ enforcing policies on LDAP directories.`,
 		}
 
 		// Print formatted configuration
-		logging.DefaultLogger.Debug("Configuration loaded: URI=%s, BindDN=%s, EnforcedPeopleOU=%s, EnforcedSvcAcctOU=%s, EnforcedGroupOU=%s, ConfigPollInterval=%d",
+		logging.DefaultLogger.Debug("Configuration loaded: URI=%s, BindDN=%s, EnforcedPeopleOU=%s, EnforcedSvcAcctOU=%s, EnforcedGroupOU=%s",
 			cfg.LDAPEnforcer.URI,
 			cfg.LDAPEnforcer.BindDN,
 			cfg.LDAPEnforcer.EnforcedPeopleOU,
 			cfg.LDAPEnforcer.EnforcedSvcAcctOU,
-			cfg.LDAPEnforcer.EnforcedGroupOU,
-			cfg.LDAPEnforcer.ConfigPollInterval)
+			cfg.LDAPEnforcer.EnforcedGroupOU)
 		return nil
 	},
 }

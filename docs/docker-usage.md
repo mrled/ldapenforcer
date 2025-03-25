@@ -43,8 +43,7 @@ Example:
 ```bash
 docker run -v $(pwd)/config.toml:/etc/ldapenforcer/config.toml \
   -e LDAPENFORCER_LOG_LEVEL=INFO \
-  -e LDAPENFORCER_CONFIG_POLL_INTERVAL=5 \
-  ldapenforcer sync --config /etc/ldapenforcer/config.toml
+  ldapenforcer sync --config /etc/ldapenforcer/config.toml --poll 10
 ```
 
 ## Using the Polling Feature
@@ -53,12 +52,12 @@ To have LDAPEnforcer continuously monitor your LDAP directory and configuration 
 
 ```bash
 docker run -v $(pwd)/config.toml:/etc/ldapenforcer/config.toml \
-  ldapenforcer sync --config /etc/ldapenforcer/config.toml --config-poll-interval 5
+  ldapenforcer sync --config /etc/ldapenforcer/config.toml --poll 10
 ```
 
 This will:
 1. Perform an initial sync
-2. Check every 5 seconds if any config files have changed
+2. Check every 10 seconds if any config files have changed
 3. When changes are detected, reload the config and perform another sync
 
 ## Security Considerations

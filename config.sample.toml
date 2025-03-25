@@ -49,10 +49,9 @@ enforced_svcacct_ou = "ou=managed,ou=svcaccts,dc=example,dc=com"
 # Full OU for enforced groups (required)
 enforced_group_ou = "ou=managed,ou=groups,dc=example,dc=com"
 
-# Config file polling interval in seconds
-# Set to a positive value to enable continuous sync with config file monitoring
-# 0 = disabled (default), recommended: 5, minimum: 1
-config_poll_interval = 0
+# Config polling is now a CLI argument only
+# Use --poll to specify a polling interval in seconds
+# Example: ldapenforcer sync --poll 10
 
 # Include files - paths are relative to this config file's directory
 # unless they are absolute paths

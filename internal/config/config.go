@@ -63,9 +63,6 @@ type LDAPEnforcerConfig struct {
 	// Full OU for enforced groups
 	EnforcedGroupOU string `toml:"enforced_group_ou"`
 
-	// Config polling interval in seconds (0 = disabled)
-	ConfigPollInterval int `toml:"config_poll_interval"`
-
 	// List of config files to include
 	Includes []string `toml:"includes"`
 
@@ -511,13 +508,6 @@ func (c *Config) MergeWithEnv() {
 		c.LDAPEnforcer.EnforcedGroupOU = val
 	}
 
-	// Config file polling interval
-	if val := os.Getenv("LDAPENFORCER_CONFIG_POLL_INTERVAL"); val != "" {
-		if interval, err := strconv.Atoi(val); err == nil && interval > 0 {
-			c.LDAPEnforcer.ConfigPollInterval = interval
-		}
-	}
-
 	// Includes - process as comma-separated list
 	if val := os.Getenv("LDAPENFORCER_INCLUDES"); val != "" {
 		includes := strings.Split(val, ",")
@@ -543,7 +533,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("enforced-people-ou", "", "Full OU for enforced people")
 	flags.String("enforced-svcacct-ou", "", "Full OU for enforced service accounts")
 	flags.String("enforced-group-ou", "", "Full OU for enforced groups")
-	flags.Int("config-poll-interval", 0, "Interval in seconds to check for config changes (0 = disabled, recommended: 5, min: 1)")
+	flags.Int("poll", 0, "Interval in seconds to check for config changes and synchronize (recommended: 10 or more)")
 }
 
 // MergeWithFlags merges command line flag values into the config
@@ -583,9 +573,6 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	}
 	if enforcedGroupOU, _ := flags.GetString("enforced-group-ou"); enforcedGroupOU != "" {
 		c.LDAPEnforcer.EnforcedGroupOU = enforcedGroupOU
-	}
-	if pollInterval, _ := flags.GetInt("config-poll-interval"); pollInterval > 0 {
-		c.LDAPEnforcer.ConfigPollInterval = pollInterval
 	}
 }
 
