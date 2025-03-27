@@ -26,7 +26,6 @@ password = "admin_password"
 # password_command = "kubectl get secret -n directory dirsrv-env -o go-template='{{ index .data \"DS_DM_PASSWORD\" | base64decode}}'"
 #
 # For commands that need shell features (|, <, >, $, ``, etc.), set password_command_via_shell = true
-# Example with kubectl and go-templates (requires password_command_via_shell = true):
 # password_command = "somehow-get-password | grep 'password:' | awk '{print $2}'"
 # password_command_via_shell = true
 
