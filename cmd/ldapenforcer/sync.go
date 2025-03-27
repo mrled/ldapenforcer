@@ -119,10 +119,15 @@ var syncCmd = &cobra.Command{
 						continue
 					}
 					fmt.Println("Config files changed, reloading configuration...")
-					if newLastSync, err := reloadConfig(cmd, dryRun); err != nil {
-						fmt.Printf("Error during config reload: %v\n", err)
+					if reloadConfig(cmd, dryRun) == nil {
+						// Run sync with new configuration
+						if err := runSync(cfg, dryRun); err == nil {
+							lastLDAPSync = time.Time{}
+						} else {
+							fmt.Printf("Error during sync triggered by config reload: %v\n", err)
+						}
 					} else {
-						lastLDAPSync = newLastSync
+						fmt.Printf("Error during config reload: %v\n", err)
 					}
 
 				case <-ldapTicker.C:
@@ -132,7 +137,7 @@ var syncCmd = &cobra.Command{
 
 						// Run sync operation to ensure LDAP is in sync with config
 						if err := runSync(cfg, dryRun); err != nil {
-							fmt.Printf("Error during periodic LDAP sync: %v\n", err)
+							fmt.Printf("Error during sync triggered by LDAP poll interval: %v\n", err)
 						} else {
 							lastLDAPSync = time.Now()
 						}
@@ -348,12 +353,12 @@ func simulateSync(client *ldap.Client) error {
 	return nil
 }
 
-// reloadConfig reloads configuration from disk and runs sync if successful
-func reloadConfig(cmd *cobra.Command, dryRun bool) (time.Time, error) {
+// reloadConfig reloads configuration from disk
+func reloadConfig(cmd *cobra.Command, dryRun bool) error {
 	// Reload configuration
 	newCfg, err := config.LoadConfig(config.GetMainConfigFile())
 	if err != nil {
-		return time.Time{}, fmt.Errorf("error reloading config: %w", err)
+		return fmt.Errorf("error reloading config: %w", err)
 	}
 
 	// Merge with command line flags
@@ -383,15 +388,15 @@ func reloadConfig(cmd *cobra.Command, dryRun bool) (time.Time, error) {
 	// Reinitialize file monitoring with new config
 	err = config.InitConfigFileMonitoring(cfg)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("error reinitializing file monitoring: %w", err)
+		return fmt.Errorf("error reinitializing file monitoring: %w", err)
 	}
 
 	// Run sync with new configuration
 	if err := runSync(cfg, dryRun); err != nil {
-		return time.Time{}, fmt.Errorf("error during sync after config reload: %w", err)
+		return fmt.Errorf("error during sync after config reload: %w", err)
 	}
 
-	return time.Now(), nil
+	return nil
 }
 
 // runSync runs a single synchronization operation
