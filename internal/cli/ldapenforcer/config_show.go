@@ -14,8 +14,8 @@ import (
 var configShowCmd = &cobra.Command{
 	Use:   "config-show",
 	Short: "Display the current configuration",
-	Long: `Display the current configuration in TOML format after 
-all sources (defaults, config file, environment variables, 
+	Long: `Display the current configuration in TOML format after
+all sources (defaults, config file, environment variables,
 and command line flags) have been applied.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if cfg == nil {
