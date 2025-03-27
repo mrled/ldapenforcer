@@ -1,4 +1,6 @@
-# Docker Usage Instructions
++++
+title = "Docker"
++++
 
 LDAPEnforcer can be run in a Docker container, which is often simpler to deploy in production environments.
 
