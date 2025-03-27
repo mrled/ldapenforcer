@@ -33,19 +33,27 @@ var syncCmd = &cobra.Command{
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		pollEnabled, _ := cmd.Flags().GetBool("poll")
 		pollConfigIntervalStr, _ := cmd.Flags().GetString("poll-config-interval")
+		pollLDAPIntervalStr, _ := cmd.Flags().GetString("poll-ldap-interval")
 
 		// If polling is enabled, run continuously
 		if pollEnabled {
-			// Parse the polling interval
-			pollInterval, err := time.ParseDuration(pollConfigIntervalStr)
+			// Parse the polling intervals
+			pollConfigInterval, err := time.ParseDuration(pollConfigIntervalStr)
 			if err != nil {
 				return fmt.Errorf("invalid poll-config-interval: %w", err)
 			}
+			if pollConfigInterval < time.Second {
+				fmt.Println("Warning: Minimum config poll interval is 1 second, using 1 second")
+				pollConfigInterval = time.Second
+			}
 
-			// Enforce minimum poll interval
-			if pollInterval < time.Second {
-				fmt.Println("Warning: Minimum poll interval is 1 second, using 1 second")
-				pollInterval = time.Second
+			pollLDAPInterval, err := time.ParseDuration(pollLDAPIntervalStr)
+			if err != nil {
+				return fmt.Errorf("invalid poll-ldap-interval: %w", err)
+			}
+			if pollLDAPInterval < time.Minute {
+				fmt.Println("Warning: Minimum LDAP poll interval is 1 minute, using 1 minute")
+				pollLDAPInterval = time.Minute
 			}
 
 			// Initialize file monitoring
@@ -54,11 +62,19 @@ var syncCmd = &cobra.Command{
 				return fmt.Errorf("failed to initialize config file monitoring: %w", err)
 			}
 
-			fmt.Printf("Starting continuous sync with polling interval of %s\n", pollInterval)
+			fmt.Printf("Starting continuous sync:\n")
+			fmt.Printf("  - Config file check interval: %s\n", pollConfigInterval)
+			fmt.Printf("  - LDAP server check interval: %s\n", pollLDAPInterval)
 			fmt.Println("Press Ctrl+C to stop")
 
-			ticker := time.NewTicker(pollInterval)
-			defer ticker.Stop()
+			// Create two tickers for different intervals
+			configTicker := time.NewTicker(pollConfigInterval)
+			ldapTicker := time.NewTicker(pollLDAPInterval)
+			defer configTicker.Stop()
+			defer ldapTicker.Stop()
+
+			// Track last LDAP sync time
+			lastLDAPSync := time.Now()
 
 			// Setup signal handling for graceful shutdown
 			sigChan := make(chan os.Signal, 1)
@@ -69,11 +85,11 @@ var syncCmd = &cobra.Command{
 				err := runSync(cfg, dryRun)
 				if err != nil {
 					fmt.Printf("Error during initial sync: %v\n", err)
-					fmt.Printf("Retrying in %s...\n", pollInterval)
+					fmt.Printf("Retrying in %s...\n", pollConfigInterval)
 
 					// Wait for either the retry interval or a signal
 					select {
-					case <-time.After(pollInterval):
+					case <-time.After(pollConfigInterval):
 						// Continue with retry
 						continue
 					case sig := <-sigChan:
@@ -83,6 +99,7 @@ var syncCmd = &cobra.Command{
 					}
 				} else {
 					// Successfully connected and synced
+					lastLDAPSync = time.Now()
 					break
 				}
 			}
@@ -90,7 +107,7 @@ var syncCmd = &cobra.Command{
 			// Main polling loop
 			for {
 				select {
-				case <-ticker.C:
+				case <-configTicker.C:
 					// Check if config files have changed
 					changed, err := config.CheckConfigFilesChanged()
 					if err != nil {
@@ -142,11 +159,27 @@ var syncCmd = &cobra.Command{
 						// Run sync with new configuration
 						if err := runSync(cfg, dryRun); err != nil {
 							fmt.Printf("Error during sync after config reload: %v\n", err)
+						} else {
+							lastLDAPSync = time.Now()
 						}
 					} else {
 						// Skip LDAP operations if configuration hasn't changed
 						logging.DefaultLogger.Trace("Config files haven't changed, skipping LDAP operations")
 					}
+
+				case <-ldapTicker.C:
+					timeSinceLastSync := time.Since(lastLDAPSync)
+					if timeSinceLastSync >= pollLDAPInterval {
+						logging.DefaultLogger.Info("Running periodic LDAP sync (it's been %s since last sync)", timeSinceLastSync)
+
+						// Run sync operation to ensure LDAP is in sync with config
+						if err := runSync(cfg, dryRun); err != nil {
+							fmt.Printf("Error during periodic LDAP sync: %v\n", err)
+						} else {
+							lastLDAPSync = time.Now()
+						}
+					}
+
 				case <-sigChan:
 					fmt.Println("\nReceived interrupt signal, shutting down...")
 					return nil
@@ -402,6 +435,7 @@ func init() {
 	syncCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncCmd.Flags().Bool("poll", false, "Enable polling mode to continuously check for config changes")
 	syncCmd.Flags().String("poll-config-interval", "10s", "Interval for --poll mode to check if the config file has changed and sync if so (recommended: \"10s\")")
+	syncCmd.Flags().String("poll-ldap-interval", "24h", "Interval for --poll mode to compare the config file to the LDAP server and sync if different (recommended: \"24h\")")
 	syncPersonCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncSvcAcctCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")
 	syncGroupCmd.Flags().Bool("dry-run", false, "Perform a dry run without making changes")

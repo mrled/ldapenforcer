@@ -66,6 +66,9 @@ type LDAPEnforcerConfig struct {
 	// Interval for polling config file changes (when poll is enabled via command line)
 	PollConfigInterval string `toml:"poll_config_interval"`
 
+	// Interval for polling LDAP server for changes (when poll is enabled via command line)
+	PollLDAPInterval string `toml:"poll_ldap_interval"`
+
 	// List of config files to include
 	Includes []string `toml:"includes"`
 
@@ -120,6 +123,7 @@ func LoadConfig(configFile string) (*Config, error) {
 	config.LDAPEnforcer.MainLogLevel = "INFO"
 	config.LDAPEnforcer.LDAPLogLevel = "INFO"
 	config.LDAPEnforcer.PollConfigInterval = "10s"
+	config.LDAPEnforcer.PollLDAPInterval = "24h"
 
 	// Load the main config file (second lowest precedence)
 	err = config.loadConfigFile(configFile)
@@ -223,6 +227,9 @@ func (c *Config) merge(other *Config) {
 	}
 	if other.LDAPEnforcer.PollConfigInterval != "" {
 		c.LDAPEnforcer.PollConfigInterval = other.LDAPEnforcer.PollConfigInterval
+	}
+	if other.LDAPEnforcer.PollLDAPInterval != "" {
+		c.LDAPEnforcer.PollLDAPInterval = other.LDAPEnforcer.PollLDAPInterval
 	}
 
 	// Make sure we also append any includes
@@ -519,6 +526,9 @@ func (c *Config) MergeWithEnv() {
 	if val := os.Getenv("LDAPENFORCER_POLL_CONFIG_INTERVAL"); val != "" {
 		c.LDAPEnforcer.PollConfigInterval = val
 	}
+	if val := os.Getenv("LDAPENFORCER_POLL_LDAP_INTERVAL"); val != "" {
+		c.LDAPEnforcer.PollLDAPInterval = val
+	}
 
 	// Includes - process as comma-separated list
 	if val := os.Getenv("LDAPENFORCER_INCLUDES"); val != "" {
@@ -545,7 +555,8 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String("enforced-people-ou", "", "Full OU for enforced people")
 	flags.String("enforced-svcacct-ou", "", "Full OU for enforced service accounts")
 	flags.String("enforced-group-ou", "", "Full OU for enforced groups")
-	flags.String("poll-config-interval", "10s", "Interval for --poll mode to check if the config file has changed and sync if so (recommended: 10s)")
+	flags.String("poll-config-interval", "10s", "Interval for --poll mode to check if the config file has changed and sync if so (recommended: \"10s\")")
+	flags.String("poll-ldap-interval", "24h", "Interval for --poll mode to compare the config file to the LDAP server and sync if different (recommended: \"24h\")")
 }
 
 // MergeWithFlags merges command line flag values into the config
@@ -588,6 +599,9 @@ func (c *Config) MergeWithFlags(flags *pflag.FlagSet) {
 	}
 	if pollConfigInterval, _ := flags.GetString("poll-config-interval"); pollConfigInterval != "" {
 		c.LDAPEnforcer.PollConfigInterval = pollConfigInterval
+	}
+	if pollLDAPInterval, _ := flags.GetString("poll-ldap-interval"); pollLDAPInterval != "" {
+		c.LDAPEnforcer.PollLDAPInterval = pollLDAPInterval
 	}
 }
 
