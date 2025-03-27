@@ -114,18 +114,15 @@ var syncCmd = &cobra.Command{
 						fmt.Printf("Error checking config files: %v\n", err)
 						continue
 					}
-
-					if changed {
-						fmt.Println("Config files changed, reloading configuration...")
-						// Reload configuration and update lastLDAPSync if successful
-						if newLastSync, err := reloadConfig(cmd, dryRun); err != nil {
-							fmt.Printf("Error during config reload: %v\n", err)
-						} else {
-							lastLDAPSync = newLastSync
-						}
-					} else {
-						// Skip LDAP operations if configuration hasn't changed
+					if !changed {
 						logging.DefaultLogger.Trace("Config files haven't changed, skipping LDAP operations")
+						continue
+					}
+					fmt.Println("Config files changed, reloading configuration...")
+					if newLastSync, err := reloadConfig(cmd, dryRun); err != nil {
+						fmt.Printf("Error during config reload: %v\n", err)
+					} else {
+						lastLDAPSync = newLastSync
 					}
 
 				case <-ldapTicker.C:
