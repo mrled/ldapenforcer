@@ -3,6 +3,8 @@ title = "Managed objects"
 +++
 
 Example config file entries and LDIFs that represent the same thing.
+(Note that `ldapenforcer` does not actually send LDIFs to the server;
+the LDIFs shown merely represent the same data as the configuration.)
 
 User config file example:
 
