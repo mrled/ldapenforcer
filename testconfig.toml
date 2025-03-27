@@ -1,8 +1,0 @@
-[ldapenforcer]
-uri = "ldap://testfile.example.com:389"
-bind_dn = "cn=testfile,dc=example,dc=com"
-password = "test_password"
-enforced_people_ou = "ou=test-managed,ou=people,dc=example,dc=com"
-enforced_svcacct_ou = "ou=test-managed,ou=svcaccts,dc=example,dc=com"
-enforced_group_ou = "ou=test-managed,ou=testgroups,dc=example,dc=com"
-includes = ["include.toml"]

@@ -1,2 +1,0 @@
-[ldapenforcer]
-enforced_people_ou = "ou=include-managed,ou=people,dc=example,dc=com"
