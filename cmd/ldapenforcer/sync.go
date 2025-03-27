@@ -117,50 +117,11 @@ var syncCmd = &cobra.Command{
 
 					if changed {
 						fmt.Println("Config files changed, reloading configuration...")
-
-						// Reload configuration
-						newCfg, err := config.LoadConfig(config.GetMainConfigFile())
-						if err != nil {
-							fmt.Printf("Error reloading config: %v\n", err)
-							continue
-						}
-
-						// Merge with command line flags
-						newCfg.MergeWithFlags(cmd.Flags())
-
-						// Set log levels from the new config
-						if newCfg.LDAPEnforcer.MainLogLevel != "" {
-							level, err := logging.ParseLevel(newCfg.LDAPEnforcer.MainLogLevel)
-							if err == nil {
-								logging.DefaultLogger.SetLevel(level)
-								logging.DefaultLogger.Debug("Main log level set to %s", logging.GetLevelName(level))
-							}
-						}
-
-						// Set LDAP log level
-						if newCfg.LDAPEnforcer.LDAPLogLevel != "" {
-							level, err := logging.ParseLevel(newCfg.LDAPEnforcer.LDAPLogLevel)
-							if err == nil {
-								logging.LDAPProtocolLogger.SetLevel(level)
-								logging.DefaultLogger.Debug("LDAP log level set to %s", logging.GetLevelName(level))
-							}
-						}
-
-						// Update the global config
-						cfg = newCfg
-
-						// Reinitialize file monitoring with new config
-						err = config.InitConfigFileMonitoring(cfg)
-						if err != nil {
-							fmt.Printf("Error reinitializing file monitoring: %v\n", err)
-							continue
-						}
-
-						// Run sync with new configuration
-						if err := runSync(cfg, dryRun); err != nil {
-							fmt.Printf("Error during sync after config reload: %v\n", err)
+						// Reload configuration and update lastLDAPSync if successful
+						if newLastSync, err := reloadConfig(cmd, dryRun); err != nil {
+							fmt.Printf("Error during config reload: %v\n", err)
 						} else {
-							lastLDAPSync = time.Now()
+							lastLDAPSync = newLastSync
 						}
 					} else {
 						// Skip LDAP operations if configuration hasn't changed
@@ -388,6 +349,52 @@ func simulateSync(client *ldap.Client) error {
 	fmt.Printf("- Would sync %d groups\n", len(cfg.LDAPEnforcer.Group))
 
 	return nil
+}
+
+// reloadConfig reloads configuration from disk and runs sync if successful
+func reloadConfig(cmd *cobra.Command, dryRun bool) (time.Time, error) {
+	// Reload configuration
+	newCfg, err := config.LoadConfig(config.GetMainConfigFile())
+	if err != nil {
+		return time.Time{}, fmt.Errorf("error reloading config: %w", err)
+	}
+
+	// Merge with command line flags
+	newCfg.MergeWithFlags(cmd.Flags())
+
+	// Set log levels from the new config
+	if newCfg.LDAPEnforcer.MainLogLevel != "" {
+		level, err := logging.ParseLevel(newCfg.LDAPEnforcer.MainLogLevel)
+		if err == nil {
+			logging.DefaultLogger.SetLevel(level)
+			logging.DefaultLogger.Debug("Main log level set to %s", logging.GetLevelName(level))
+		}
+	}
+
+	// Set LDAP log level
+	if newCfg.LDAPEnforcer.LDAPLogLevel != "" {
+		level, err := logging.ParseLevel(newCfg.LDAPEnforcer.LDAPLogLevel)
+		if err == nil {
+			logging.LDAPProtocolLogger.SetLevel(level)
+			logging.DefaultLogger.Debug("LDAP log level set to %s", logging.GetLevelName(level))
+		}
+	}
+
+	// Update the global config
+	cfg = newCfg
+
+	// Reinitialize file monitoring with new config
+	err = config.InitConfigFileMonitoring(cfg)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("error reinitializing file monitoring: %w", err)
+	}
+
+	// Run sync with new configuration
+	if err := runSync(cfg, dryRun); err != nil {
+		return time.Time{}, fmt.Errorf("error during sync after config reload: %w", err)
+	}
+
+	return time.Now(), nil
 }
 
 // runSync runs a single synchronization operation
