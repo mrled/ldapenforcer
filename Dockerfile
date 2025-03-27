@@ -7,7 +7,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build ./cmd/ldapenforcer -ldflags="-w -s" -o ldapenforcer
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o ldapenforcer ./cmd/ldapenforcer
 
 # Final stage
 FROM alpine:3.19
