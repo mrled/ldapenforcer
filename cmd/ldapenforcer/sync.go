@@ -67,14 +67,14 @@ var syncCmd = &cobra.Command{
 			fmt.Printf("  - LDAP server check interval: %s\n", pollLDAPInterval)
 			fmt.Println("Press Ctrl+C to stop")
 
-			// Create two tickers for different intervals
+			// Create ticker for configuration checks and resettable timer for LDAP sync
 			configTicker := time.NewTicker(pollConfigInterval)
-			ldapTicker := time.NewTicker(pollLDAPInterval)
 			defer configTicker.Stop()
-			defer ldapTicker.Stop()
+			ldapTimer := time.NewTimer(pollLDAPInterval)
+			defer ldapTimer.Stop()
 
 			// Track last LDAP sync time
-			lastLDAPSync := time.Now()
+			lastLDAPSync := time.Time{}
 
 			// Setup signal handling for graceful shutdown
 			sigChan := make(chan os.Signal, 1)
@@ -122,7 +122,12 @@ var syncCmd = &cobra.Command{
 					if reloadConfig(cmd, dryRun) == nil {
 						// Run sync with new configuration
 						if err := runSync(cfg, dryRun); err == nil {
-							lastLDAPSync = time.Time{}
+							lastLDAPSync = time.Now()
+							// Reset the LDAP timer after successful sync
+							if !ldapTimer.Stop() {
+								<-ldapTimer.C
+							}
+							ldapTimer.Reset(pollLDAPInterval)
 						} else {
 							fmt.Printf("Error during sync triggered by config reload: %v\n", err)
 						}
@@ -130,7 +135,7 @@ var syncCmd = &cobra.Command{
 						fmt.Printf("Error during config reload: %v\n", err)
 					}
 
-				case <-ldapTicker.C:
+				case <-ldapTimer.C:
 					timeSinceLastSync := time.Since(lastLDAPSync)
 					if timeSinceLastSync >= pollLDAPInterval {
 						logging.DefaultLogger.Info("Running periodic LDAP sync (it's been %s since last sync)", timeSinceLastSync)
@@ -138,9 +143,16 @@ var syncCmd = &cobra.Command{
 						// Run sync operation to ensure LDAP is in sync with config
 						if err := runSync(cfg, dryRun); err != nil {
 							fmt.Printf("Error during sync triggered by LDAP poll interval: %v\n", err)
+							// Reset the timer even on error to avoid tight loop
+							ldapTimer.Reset(pollLDAPInterval)
 						} else {
 							lastLDAPSync = time.Now()
+							// Reset the timer after successful sync
+							ldapTimer.Reset(pollLDAPInterval)
 						}
+					} else {
+						// Reset the timer if we're still within the interval
+						ldapTimer.Reset(pollLDAPInterval)
 					}
 
 				case <-sigChan:
