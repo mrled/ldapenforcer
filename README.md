@@ -11,8 +11,8 @@ Currently it assumes it's talking to an instance of
 [389 Directory Server](https://www.port389.org/)
 with the [MemberOf plugin](https://www.port389.org/docs/389ds/design/memberof-plugin.html) enabled.
 
-See full documentation at
-<https://pages.micahrl.com/ldapenforcer>.
+* [Announcement blog post](https://me.micahrl.com/blog/ldapenforcer-alpha/)
+* [Full documentation](https://pages.micahrl.com/ldapenforcer)
 
 ## Installation
 
