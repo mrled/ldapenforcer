@@ -9,6 +9,15 @@ in plain text files that can be committed to git.
 The synchronization process can be run repeatedly to no ill effect ---
 unlike applying LDIFs, which will only work once for some operations like add or delete.
 
+## Open source
+
+The source code is available [on GitHub](https://github.com/mrled/ldapenforcer).
+
+## Install
+
+* [Binaries](https://github.com/mrled/ldapenforcer/releases)
+* [Container images](https://github.com/mrled/ldapenforcer/pkgs/container/ldapenforcer)
+
 ## Example
 
 ```sh
