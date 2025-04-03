@@ -2,7 +2,7 @@
 title = "LDAPEnforcer"
 +++
 
-`ldapenforcer` idempotently manages users and groups in an LDAP server.
+`ldapenforcer` declaratively manages users and groups in an LDAP server.
 
 It keeps the definitions of users, groups, and group membership
 in plain text files that can be committed to git.

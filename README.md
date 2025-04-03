@@ -1,9 +1,9 @@
 # LDAPEnforcer
 
-A command line tool for managing and enforcing policies on LDAP directories.
+`ldapenforcer` declaratively manages users and groups in an LDAP server.
 
-ldapenforcer keeps the definitions of users (people and service accounts),
-groups, and group membership in plain text files that can be committed to git.
+It keeps the definitions of users, groups, and group membership
+in plain text files that can be committed to git.
 The synchronization process can be run repeatedly to no ill effect ---
 unlike applying LDIFs, which will only work once for some operations like add or delete.
 
